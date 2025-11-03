@@ -1,0 +1,25 @@
+{
+  "name": "mt-prism",
+  "version": "0.1.0",
+  "description": "PRISM: PRD Requirements Intelligent System Manager - Automated discovery and TDD generation for MedTrainer",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "prism": "pnpm --filter @mt-prism/cli run cli",
+    "analyze": "pnpm prism analyze",
+    "generate": "pnpm prism generate",
+    "dev": "pnpm --parallel --filter './packages/**' run dev",
+    "build": "pnpm --filter './packages/**' run build",
+    "test": "pnpm --filter './packages/**' run test"
+  },
+  "keywords": [
+    "PRD",
+    "TDD", 
+    "requirements-analysis",
+    "ai-agents",
+    "mcp",
+    "medtrainer"
+  ]
+}
