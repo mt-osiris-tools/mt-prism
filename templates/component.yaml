@@ -1,0 +1,80 @@
+# Component Schema
+# This file documents the structure of components.yaml output from Figma analysis
+
+metadata:
+  figma_file_id: string           # Figma file ID
+  figma_file_name: string         # Figma file name
+  analyzed_at: string             # ISO8601 timestamp
+  total_components: number        # Total count of components
+  total_screens: number           # Total count of screens/pages
+
+components:
+  - id: string                    # Format: COMP-{NUM} (e.g., COMP-001)
+    name: string                  # Full component name from Figma
+    type: string                  # Button | Input | Card | Modal, etc.
+    category: string              # atom | molecule | organism | template | page
+    description: string           # Component description
+
+    variants: list                # All component variants
+      - name: string              # Variant name (e.g., "default", "hover", "disabled")
+        properties: object        # Visual properties for this variant
+          width: string           # e.g., "200px"
+          height: string          # e.g., "48px"
+          backgroundColor: string # e.g., "#2196f3"
+          color: string           # e.g., "#ffffff"
+          # ... more properties
+
+    properties: list              # Configurable properties
+      - name: string              # Property name (e.g., "label", "size")
+        type: string              # text | boolean | enum
+        default: any              # Default value
+
+    composition: list             # Child elements
+      - type: string              # Element type
+        role: string              # Role in composition (e.g., "label", "icon")
+        optional: boolean         # Whether this element is optional
+
+    usage: object                 # Where component is used
+      screens: list               # List of screen names
+      count: number               # Total instance count
+
+    design_tokens: object         # Design tokens used
+      color: string               # Token reference (e.g., "colors.primary.500")
+      spacing: string             # Token reference
+      borderRadius: string        # Token reference
+      typography: string          # Token reference
+
+    screenshot: string            # Path to screenshot file (optional)
+
+# Example:
+# components:
+#   - id: COMP-001
+#     name: "Button/Primary/Large"
+#     type: Button
+#     category: atom
+#     description: "Primary call-to-action button in large size"
+#     variants:
+#       - name: default
+#         properties:
+#           width: "200px"
+#           height: "48px"
+#           backgroundColor: "#2196f3"
+#           color: "#ffffff"
+#           borderRadius: "8px"
+#     properties:
+#       - name: label
+#         type: text
+#         default: "Button"
+#       - name: hasIcon
+#         type: boolean
+#         default: false
+#     composition:
+#       - type: text
+#         role: label
+#         optional: false
+#     usage:
+#       screens: ["Login", "Dashboard"]
+#       count: 15
+#     design_tokens:
+#       color: "colors.primary.500"
+#     screenshot: "screenshots/atoms/Button-Primary-Large.png"

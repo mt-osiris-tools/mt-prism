@@ -1,0 +1,366 @@
+# Components Schema Contract
+# Version: 1.0.0
+# Purpose: Defines the structure of components.yaml output from Figma Analyzer skill
+
+schema_version: "1.0.0"
+description: "UI components extracted from Figma design files"
+
+metadata:
+  figma_file_id:
+    type: string
+    description: "Figma file identifier"
+    required: true
+    example: "abc123xyz456"
+  
+  figma_file_name:
+    type: string
+    description: "Human-readable file name"
+    required: true
+    example: "Feature X - Design System"
+  
+  analyzed_at:
+    type: string
+    format: ISO8601
+    description: "Timestamp when analysis was performed"
+    required: true
+    example: "2025-11-06T10:35:23Z"
+  
+  total_components:
+    type: integer
+    description: "Total count of components extracted"
+    required: true
+    minimum: 0
+  
+  total_screens:
+    type: integer
+    description: "Total count of screens/pages analyzed"
+    required: true
+    minimum: 0
+
+components:
+  type: array
+  description: "List of extracted UI components"
+  required: true
+  items:
+    type: object
+    required_fields:
+      - id
+      - name
+      - type
+      - category
+      - description
+      - variants
+      - properties
+      - composition
+      - usage
+      - design_tokens
+    
+    fields:
+      id:
+        type: string
+        format: regex
+        pattern: "^COMP-\\d{3}$"
+        description: "Unique component identifier"
+        examples:
+          - "COMP-001"
+          - "COMP-042"
+      
+      name:
+        type: string
+        min_length: 1
+        max_length: 200
+        description: "Full component name from Figma"
+        examples:
+          - "Button/Primary/Large"
+          - "Input/Text/Default"
+          - "Card/Product/WithImage"
+      
+      type:
+        type: string
+        description: "Component type/category"
+        examples:
+          - "Button"
+          - "Input"
+          - "Card"
+          - "Modal"
+          - "Table"
+      
+      category:
+        type: enum
+        values:
+          - atom
+          - molecule
+          - organism
+          - template
+          - page
+        description: "Atomic design category"
+        required: true
+      
+      description:
+        type: string
+        description: "Component description and purpose"
+        required: true
+      
+      variants:
+        type: array
+        min_items: 1
+        description: "Component variants (states, sizes, etc.)"
+        items:
+          type: object
+          required_fields:
+            - name
+            - properties
+          fields:
+            name:
+              type: string
+              description: "Variant name"
+              examples:
+                - "default"
+                - "hover"
+                - "disabled"
+                - "large"
+            
+            properties:
+              type: object
+              description: "Visual properties for this variant"
+              fields:
+                width:
+                  type: string
+                  example: "200px"
+                height:
+                  type: string
+                  example: "48px"
+                backgroundColor:
+                  type: string
+                  example: "#2196f3"
+                color:
+                  type: string
+                  example: "#ffffff"
+                borderRadius:
+                  type: string
+                  example: "8px"
+                fontSize:
+                  type: string
+                  example: "16px"
+              note: "Additional CSS properties as needed"
+      
+      properties:
+        type: array
+        description: "Configurable component properties"
+        default: []
+        items:
+          type: object
+          required_fields:
+            - name
+            - type
+            - default
+          fields:
+            name:
+              type: string
+              description: "Property name"
+              examples:
+                - "label"
+                - "size"
+                - "disabled"
+            
+            type:
+              type: enum
+              values:
+                - text
+                - boolean
+                - enum
+              description: "Property value type"
+            
+            default:
+              type: any
+              description: "Default value for this property"
+            
+            options:
+              type: array
+              items:
+                type: string
+              description: "Available options (for enum type only)"
+              example: ["small", "medium", "large"]
+      
+      composition:
+        type: array
+        description: "Child elements that make up the component"
+        default: []
+        items:
+          type: object
+          required_fields:
+            - type
+            - role
+            - optional
+          fields:
+            type:
+              type: string
+              description: "Element type"
+              examples:
+                - "text"
+                - "icon"
+                - "image"
+            
+            role:
+              type: string
+              description: "Role in composition"
+              examples:
+                - "label"
+                - "prefix-icon"
+                - "suffix-icon"
+                - "body"
+            
+            optional:
+              type: boolean
+              description: "Whether element is optional"
+      
+      usage:
+        type: object
+        description: "Where and how often component is used"
+        required_fields:
+          - screens
+          - count
+        fields:
+          screens:
+            type: array
+            items:
+              type: string
+            description: "List of screen names where component appears"
+            example: ["Login", "Dashboard", "Settings"]
+          
+          count:
+            type: integer
+            minimum: 0
+            description: "Total instance count across all screens"
+      
+      design_tokens:
+        type: object
+        description: "Design tokens used by this component"
+        fields:
+          color:
+            type: string
+            description: "Color token reference"
+            example: "colors.primary.500"
+          
+          spacing:
+            type: string
+            description: "Spacing token reference"
+            example: "spacing.md"
+          
+          borderRadius:
+            type: string
+            description: "Border radius token reference"
+            example: "border-radius.md"
+          
+          typography:
+            type: string
+            description: "Typography token reference"
+            example: "typography.button-large"
+        note: "All fields optional but recommended for design system consistency"
+      
+      screenshot:
+        type: string
+        description: "Relative path to component screenshot (optional)"
+        format: filepath
+        example: "screenshots/atoms/Button-Primary-Large.png"
+
+# Example valid components.yaml
+example: |
+  metadata:
+    figma_file_id: "abc123xyz456"
+    figma_file_name: "Feature X - Design System"
+    analyzed_at: "2025-11-06T10:35:23Z"
+    total_components: 2
+    total_screens: 8
+  
+  components:
+    - id: COMP-001
+      name: "Button/Primary/Large"
+      type: Button
+      category: atom
+      description: "Primary call-to-action button in large size"
+      variants:
+        - name: default
+          properties:
+            width: "200px"
+            height: "48px"
+            backgroundColor: "#2196f3"
+            color: "#ffffff"
+            borderRadius: "8px"
+            fontSize: "16px"
+        - name: hover
+          properties:
+            backgroundColor: "#1976d2"
+        - name: disabled
+          properties:
+            backgroundColor: "#e0e0e0"
+            color: "#9e9e9e"
+      properties:
+        - name: label
+          type: text
+          default: "Button"
+        - name: hasIcon
+          type: boolean
+          default: false
+        - name: iconPosition
+          type: enum
+          default: "left"
+          options: ["left", "right"]
+      composition:
+        - type: icon
+          role: prefix-icon
+          optional: true
+        - type: text
+          role: label
+          optional: false
+        - type: icon
+          role: suffix-icon
+          optional: true
+      usage:
+        screens: ["Login", "Dashboard", "Settings"]
+        count: 15
+      design_tokens:
+        color: "colors.primary.500"
+        borderRadius: "border-radius.md"
+        spacing: "spacing.md"
+        typography: "typography.button-large"
+      screenshot: "screenshots/atoms/Button-Primary-Large.png"
+    
+    - id: COMP-002
+      name: "Input/Text/Default"
+      type: Input
+      category: atom
+      description: "Standard text input field"
+      variants:
+        - name: default
+          properties:
+            width: "300px"
+            height: "40px"
+            backgroundColor: "#ffffff"
+            borderColor: "#cccccc"
+            borderRadius: "4px"
+      properties:
+        - name: placeholder
+          type: text
+          default: ""
+        - name: disabled
+          type: boolean
+          default: false
+      composition:
+        - type: text
+          role: input
+          optional: false
+      usage:
+        screens: ["Login", "Profile"]
+        count: 8
+      design_tokens:
+        borderRadius: "border-radius.sm"
+        spacing: "spacing.sm"
+
+validation_rules:
+  - "metadata.total_components must equal components.length"
+  - "All component IDs must be unique"
+  - "Each component must have at least one variant"
+  - "usage.count must be non-negative integer"
+  - "If screenshot provided, path must be relative"
+  - "Variant names should be lowercase or kebab-case"
