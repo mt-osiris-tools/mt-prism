@@ -430,3 +430,10 @@ mt-prism report --from <date> --to <date> --output report.pdf
 7. Run pilot with single project
 8. Iterate based on feedback
 9. Scale to full deployment
+
+## Active Technologies
+- TypeScript 5.3+ + @anthropic-ai/sdk ^0.27.0, yaml ^2.3.4, zod ^3.22.4 (001-prism-plugin)
+- Local filesystem (.prism/ directory for session state, outputs, and metrics) (001-prism-plugin)
+
+## Recent Changes
+- 001-prism-plugin: Added TypeScript 5.3+ + @anthropic-ai/sdk ^0.27.0, yaml ^2.3.4, zod ^3.22.4

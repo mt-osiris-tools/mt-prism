@@ -1,0 +1,279 @@
+# Requirements Schema Contract
+# Version: 1.0.0
+# Purpose: Defines the structure of requirements.yaml output from PRD Analyzer skill
+
+schema_version: "1.0.0"
+description: "Structured requirements extracted from Product Requirements Documents"
+
+metadata:
+  prd_source:
+    type: string
+    description: "URL or file path to the source PRD"
+    required: true
+    examples:
+      - "https://company.atlassian.net/wiki/spaces/PROD/pages/123456"
+      - "/path/to/local-prd.md"
+  
+  analyzed_at:
+    type: string
+    format: ISO8601
+    description: "Timestamp when analysis was performed"
+    required: true
+    example: "2025-11-06T10:30:56Z"
+  
+  analyzer_version:
+    type: string
+    description: "Version of PRD Analyzer skill"
+    required: true
+    example: "1.0.0"
+  
+  total_requirements:
+    type: integer
+    description: "Total count of requirements extracted"
+    required: true
+    minimum: 0
+    example: 24
+
+requirements:
+  type: array
+  description: "List of extracted requirements"
+  required: true
+  items:
+    type: object
+    required_fields:
+      - id
+      - type
+      - category
+      - priority
+      - complexity
+      - title
+      - description
+      - acceptance_criteria
+      - user_stories
+      - dependencies
+      - source_location
+      - confidence
+      - status
+      - issues
+    
+    fields:
+      id:
+        type: string
+        format: regex
+        pattern: "^REQ-(FUNC|NF|CONST|ASSUMP)-\\d{3}$"
+        description: "Unique requirement identifier"
+        examples:
+          - "REQ-FUNC-001"
+          - "REQ-NF-005"
+          - "REQ-CONST-002"
+      
+      type:
+        type: enum
+        values:
+          - functional
+          - non-functional
+          - constraint
+          - assumption
+        description: "Requirement classification"
+        required: true
+      
+      category:
+        type: enum
+        values:
+          - feature
+          - enhancement
+          - bug-fix
+          - technical-debt
+          - performance
+          - security
+          - compliance
+        description: "Requirement sub-classification"
+        required: true
+      
+      priority:
+        type: enum
+        values:
+          - critical
+          - high
+          - medium
+          - low
+        description: "Business priority level"
+        required: true
+      
+      complexity:
+        type: integer
+        minimum: 1
+        maximum: 10
+        description: "Implementation complexity on 1-10 scale"
+        required: true
+      
+      title:
+        type: string
+        min_length: 1
+        max_length: 100
+        description: "Short, descriptive title without newlines"
+        required: true
+        example: "User Authentication with Email/Password"
+      
+      description:
+        type: string
+        min_length: 1
+        description: "Full requirement description"
+        required: true
+      
+      acceptance_criteria:
+        type: array
+        items:
+          type: string
+        description: "List of testable conditions (can be empty if missing)"
+        required: true
+        default: []
+      
+      user_stories:
+        type: array
+        items:
+          type: string
+        description: "Related user stories (can be empty)"
+        required: true
+        default: []
+      
+      dependencies:
+        type: array
+        items:
+          type: string
+          format: regex
+          pattern: "^REQ-(FUNC|NF|CONST|ASSUMP)-\\d{3}$"
+        description: "List of requirement IDs this depends on"
+        required: true
+        default: []
+        validation: "All referenced IDs must exist in requirements collection"
+      
+      source_location:
+        type: string
+        description: "Where in PRD this requirement came from"
+        required: true
+        examples:
+          - "Section 3.1: User Authentication"
+          - "Page 5, paragraph 2"
+          - "Appendix A - Security Requirements"
+      
+      confidence:
+        type: float
+        minimum: 0.0
+        maximum: 1.0
+        description: "Extraction confidence score"
+        required: true
+        example: 0.95
+      
+      status:
+        type: enum
+        values:
+          - draft
+          - validated
+          - clarified
+          - approved
+        description: "Requirement lifecycle status"
+        required: true
+        default: draft
+        transitions: "draft → validated → clarified → approved (one-way)"
+      
+      issues:
+        type: array
+        items:
+          type: object
+          required_fields:
+            - type
+            - severity
+            - description
+            - suggestion
+          fields:
+            type:
+              type: enum
+              values:
+                - ambiguity
+                - missing
+                - conflict
+                - incomplete
+              description: "Issue type"
+            
+            severity:
+              type: enum
+              values:
+                - critical
+                - high
+                - medium
+                - low
+              description: "Issue severity"
+            
+            description:
+              type: string
+              description: "What's wrong"
+            
+            suggestion:
+              type: string
+              description: "How to fix"
+        description: "Detected quality issues"
+        required: true
+        default: []
+
+# Example valid requirements.yaml
+example: |
+  metadata:
+    prd_source: "https://company.atlassian.net/wiki/spaces/PROD/pages/123456"
+    analyzed_at: "2025-11-06T10:30:56Z"
+    analyzer_version: "1.0.0"
+    total_requirements: 2
+  
+  requirements:
+    - id: REQ-FUNC-001
+      type: functional
+      category: feature
+      priority: critical
+      complexity: 4
+      title: "User Authentication with Email/Password"
+      description: |
+        Users must be able to sign in using email and password.
+        The system should support "remember me" functionality to persist
+        login sessions for 30 days.
+      acceptance_criteria:
+        - "Login form with email and password fields"
+        - "Remember me checkbox that persists login for 30 days"
+        - "Successful authentication redirects to dashboard"
+        - "Invalid credentials show clear error message"
+      user_stories:
+        - "As a user, I want to log in with my email and password"
+      dependencies: []
+      source_location: "Section 3.1: User Authentication"
+      confidence: 0.95
+      status: draft
+      issues: []
+    
+    - id: REQ-NF-001
+      type: non-functional
+      category: performance
+      priority: high
+      complexity: 6
+      title: "System Response Time < 200ms"
+      description: "All API endpoints must respond within 200ms at p95"
+      acceptance_criteria:
+        - "95% of requests complete in under 200ms"
+        - "No single endpoint exceeds 500ms"
+      user_stories: []
+      dependencies: []
+      source_location: "Section 5.2: Performance Requirements"
+      confidence: 0.88
+      status: draft
+      issues:
+        - type: ambiguity
+          severity: medium
+          description: "Not specified if 200ms includes network latency"
+          suggestion: "Clarify if measurement is server-side only or end-to-end"
+
+validation_rules:
+  - "metadata.total_requirements must equal requirements.length"
+  - "All requirement IDs must be unique"
+  - "All dependency IDs must reference existing requirements"
+  - "Status must follow valid transitions"
+  - "Confidence must be between 0.0 and 1.0"
+  - "Complexity must be integer between 1 and 10"
+  - "Title must not contain newlines"

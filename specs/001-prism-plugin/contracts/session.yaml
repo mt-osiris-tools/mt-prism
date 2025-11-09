@@ -1,0 +1,91 @@
+# Session Schema Contract
+# Version: 1.0.0
+# Purpose: Defines workflow session state structure
+
+schema_version: "1.0.0"
+description: "Workflow execution session state"
+
+session:
+  type: object
+  required_fields: [session_id, workflow_type, status, current_step, steps_completed, created_at, updated_at, inputs, outputs, metrics]
+  
+  fields:
+    session_id:
+      type: string
+      pattern: "^sess-\\d{13}$"
+      description: "Timestamp-based session ID"
+      example: "sess-1699123456789"
+    
+    workflow_type:
+      type: enum
+      values: [discovery, prd-only, validation-only]
+      default: discovery
+    
+    status:
+      type: enum
+      values: [running, paused, completed, failed]
+      default: running
+    
+    current_step:
+      type: integer
+      minimum: 1
+      maximum: 5
+      description: "Current workflow step (1-5)"
+    
+    steps_completed:
+      type: array
+      items: {type: integer, minimum: 1, maximum: 5}
+      description: "List of completed steps"
+    
+    created_at:
+      type: string
+      format: ISO8601
+    
+    updated_at:
+      type: string
+      format: ISO8601
+    
+    started_at:
+      type: string
+      format: ISO8601
+      optional: true
+    
+    completed_at:
+      type: string
+      format: ISO8601
+      optional: true
+    
+    inputs:
+      type: object
+      fields:
+        prd_url: {type: string, optional: true}
+        figma_url: {type: string, optional: true}
+        clarification_mode: {type: enum, values: [interactive, jira, slack, file, skip]}
+        codebase_path: {type: string, optional: true}
+    
+    outputs:
+      type: object
+      fields:
+        requirements_path: {type: string, optional: true}
+        components_path: {type: string, optional: true}
+        gaps_path: {type: string, optional: true}
+        questions_path: {type: string, optional: true}
+        tdd_path: {type: string, optional: true}
+    
+    metrics:
+      type: object
+      fields:
+        requirements_extracted: {type: integer, optional: true}
+        components_extracted: {type: integer, optional: true}
+        gaps_found: {type: integer, optional: true}
+        questions_asked: {type: integer, optional: true}
+        duration_ms: {type: object, optional: true}
+    
+    error:
+      type: object
+      optional: true
+      fields:
+        step: {type: integer}
+        message: {type: string}
+        stack: {type: string, optional: true}
+        recoverable: {type: boolean}

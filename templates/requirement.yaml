@@ -1,0 +1,50 @@
+# Requirement Schema
+# This file documents the structure of requirements.yaml output from PRD analysis
+
+metadata:
+  prd_source: string              # URL or file path to PRD
+  analyzed_at: string             # ISO8601 timestamp
+  analyzer_version: string        # Version of analyzer
+  total_requirements: number      # Total count of requirements
+
+requirements:
+  - id: string                    # Format: REQ-{TYPE}-{NUM} (e.g., REQ-FUNC-001)
+    type: string                  # functional | non-functional | constraint | assumption
+    category: string              # feature | enhancement | bug-fix | technical-debt | performance | security | compliance
+    priority: string              # critical | high | medium | low
+    complexity: number            # 1-10 scale
+    title: string                 # Short, descriptive title (< 100 chars)
+    description: string           # Full requirement description
+    acceptance_criteria: list     # List of testable conditions (can be empty)
+    user_stories: list            # List of related user stories (can be empty)
+    dependencies: list            # List of requirement IDs this depends on (can be empty)
+    source_location: string       # Where in PRD (e.g., "Section 3.1, User Authentication")
+    confidence: number            # 0.0-1.0 (extraction confidence)
+    status: string                # draft | validated | clarified | approved
+    issues: list                  # List of detected issues (can be empty)
+      - type: string              # ambiguity | missing | conflict | incomplete
+        severity: string          # critical | high | medium | low
+        description: string       # What's wrong
+        suggestion: string        # How to fix
+
+# Example:
+# requirements:
+#   - id: REQ-FUNC-001
+#     type: functional
+#     category: feature
+#     priority: critical
+#     complexity: 4
+#     title: "User Authentication with Email/Password"
+#     description: "Users can sign in using email and password with optional remember me functionality"
+#     acceptance_criteria:
+#       - "Login form with email and password fields"
+#       - "Remember me checkbox that persists login for 30 days"
+#       - "Successful authentication redirects to dashboard"
+#       - "Invalid credentials show clear error message"
+#     user_stories:
+#       - "As a user, I want to log in with my email and password so that I can access my account"
+#     dependencies: []
+#     source_location: "Section 3.1, User Authentication"
+#     confidence: 0.95
+#     status: draft
+#     issues: []

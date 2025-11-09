@@ -1,0 +1,231 @@
+# Gaps Schema Contract
+# Version: 1.0.0
+# Purpose: Defines the structure of gaps.yaml output from Requirements Validator skill
+
+schema_version: "1.0.0"
+description: "Gaps and inconsistencies between requirements and UI designs"
+
+gaps:
+  type: array
+  description: "List of detected gaps"
+  required: true
+  items:
+    type: object
+    required_fields:
+      - id
+      - type
+      - severity
+      - description
+      - impact
+      - stakeholder
+      - resolved
+    
+    fields:
+      id:
+        type: string
+        format: regex
+        pattern: "^GAP-\\d{3}$"
+        description: "Unique gap identifier"
+        examples:
+          - "GAP-001"
+          - "GAP-042"
+      
+      type:
+        type: enum
+        values:
+          - missing_ui
+          - no_requirement
+          - incomplete_mapping
+          - inconsistency
+          - missing_acceptance_criteria
+        description: "Gap classification"
+        required: true
+      
+      severity:
+        type: enum
+        values:
+          - critical
+          - high
+          - medium
+          - low
+        description: "Gap severity/priority"
+        required: true
+      
+      requirement_id:
+        type: string
+        format: regex
+        pattern: "^REQ-(FUNC|NF|CONST|ASSUMP)-\\d{3}$"
+        description: "Related requirement ID (optional)"
+        validation: "If provided, must reference valid requirement"
+      
+      component_id:
+        type: string
+        format: regex
+        pattern: "^COMP-\\d{3}$"
+        description: "Related component ID (optional)"
+        validation: "If provided, must reference valid component"
+      
+      description:
+        type: string
+        min_length: 1
+        description: "Clear description of what's wrong"
+        required: true
+      
+      impact:
+        type: string
+        min_length: 1
+        description: "Why this matters / business impact"
+        required: true
+      
+      stakeholder:
+        type: array
+        min_items: 1
+        items:
+          type: enum
+          values:
+            - product
+            - design
+            - engineering
+        description: "Who needs to address this gap"
+        required: true
+      
+      question_id:
+        type: string
+        format: regex
+        pattern: "^QUEST-\\d{3}$"
+        description: "Related clarification question ID (optional)"
+        validation: "If provided, must reference valid question"
+      
+      resolved:
+        type: boolean
+        description: "Whether gap has been resolved"
+        required: true
+        default: false
+      
+      resolution:
+        type: string
+        description: "How gap was resolved (required if resolved = true)"
+
+gap_types:
+  missing_ui:
+    description: "Requirement exists but no corresponding UI component"
+    example: "PRD specifies CSV export but no export button in Figma"
+    typical_severity: "critical or high"
+    typical_stakeholders: ["design", "product"]
+  
+  no_requirement:
+    description: "UI component exists but no backing requirement"
+    example: "Figma has dark mode toggle but not in PRD"
+    typical_severity: "medium or low"
+    typical_stakeholders: ["product"]
+  
+  incomplete_mapping:
+    description: "Requirement partially implemented in UI"
+    example: "PRD specifies 5 form fields but Figma shows only 3"
+    typical_severity: "high or critical"
+    typical_stakeholders: ["design", "product"]
+  
+  inconsistency:
+    description: "Conflict between PRD description and Figma"
+    example: "PRD says dropdown but Figma shows radio buttons"
+    typical_severity: "medium or high"
+    typical_stakeholders: ["design", "product"]
+  
+  missing_acceptance_criteria:
+    description: "Requirement lacks testable conditions"
+    example: "System should be fast with no specific metrics"
+    typical_severity: "medium"
+    typical_stakeholders: ["product", "engineering"]
+
+# Example valid gaps.yaml
+example: |
+  gaps:
+    - id: GAP-001
+      type: missing_ui
+      severity: critical
+      requirement_id: REQ-FUNC-015
+      description: |
+        Requirement specifies CSV export functionality but no export 
+        button or menu item found in Figma designs for the data table screen.
+      impact: |
+        Users will not be able to export data, blocking a critical 
+        workflow specified in the PRD. This is a P0 feature.
+      stakeholder:
+        - design
+        - product
+      question_id: QUEST-001
+      resolved: false
+    
+    - id: GAP-002
+      type: no_requirement
+      severity: medium
+      component_id: COMP-023
+      description: |
+        Figma designs include a "Dark Mode Toggle" component in the 
+        settings screen, but no corresponding requirement in PRD.
+      impact: |
+        Unclear if dark mode is in scope for this release. Development 
+        effort may be wasted if not required.
+      stakeholder:
+        - product
+      question_id: QUEST-002
+      resolved: false
+    
+    - id: GAP-003
+      type: inconsistency
+      severity: high
+      requirement_id: REQ-FUNC-008
+      component_id: COMP-012
+      description: |
+        PRD specifies dropdown for country selection, but Figma shows 
+        radio buttons. Dropdown is more scalable for 200+ countries.
+      impact: |
+        UI pattern mismatch. Radio buttons don't scale for large option 
+        sets and violate usability guidelines.
+      stakeholder:
+        - design
+        - product
+      question_id: QUEST-003
+      resolved: false
+    
+    - id: GAP-004
+      type: missing_acceptance_criteria
+      severity: medium
+      requirement_id: REQ-NF-003
+      description: |
+        Requirement states "system should be fast" with no specific 
+        response time targets or metrics.
+      impact: |
+        Cannot test or validate requirement. Team doesn't know when 
+        requirement is met.
+      stakeholder:
+        - product
+        - engineering
+      question_id: QUEST-004
+      resolved: false
+
+validation_rules:
+  - "All gap IDs must be unique"
+  - "requirement_id and component_id must reference valid entities"
+  - "At least one of requirement_id or component_id should be present"
+  - "stakeholder array must not be empty"
+  - "If resolved = true, resolution field must be provided"
+  - "question_id must reference valid question if provided"
+
+severity_guidelines:
+  critical:
+    - "Blocks core functionality"
+    - "Makes feature unusable"
+    - "Regulatory/compliance risk"
+  high:
+    - "Significant user impact"
+    - "Workaround available but painful"
+    - "Affects primary workflows"
+  medium:
+    - "Moderate user impact"
+    - "Affects secondary workflows"
+    - "Easy workaround exists"
+  low:
+    - "Minor inconvenience"
+    - "Edge case scenario"
+    - "Nice-to-have clarification"

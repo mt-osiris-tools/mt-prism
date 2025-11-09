@@ -1,0 +1,71 @@
+# TDD Schema Contract
+# Version: 1.0.0
+# Purpose: Defines Technical Design Document structure
+
+schema_version: "1.0.0"
+description: "Technical Design Document output structure"
+
+tdd:
+  type: object
+  required_fields: [session_id, generated_at, version, architecture, api_spec, database, frontend, implementation, testing, deployment, requirements_coverage]
+  
+  sections:
+    - name: "1. Executive Summary"
+      description: "High-level overview"
+    - name: "2. Requirements Summary"
+      description: "Validated requirements list"
+    - name: "3. System Architecture"
+      description: "Architecture decisions and diagrams"
+    - name: "4. Data Models"
+      description: "Database schemas and relationships"
+    - name: "5. API Specification"
+      description: "OpenAPI 3.1 specification"
+    - name: "6. Frontend Architecture"
+      description: "UI component structure"
+    - name: "7. Security Considerations"
+      description: "Auth, authorization, data protection"
+    - name: "8. Performance & Scalability"
+      description: "Performance targets and strategies"
+    - name: "9. Testing Strategy"
+      description: "Unit, integration, E2E tests"
+    - name: "10. Deployment & DevOps"
+      description: "CI/CD, monitoring, infrastructure"
+    - name: "11. Implementation Plan"
+      description: "Phases, tasks, effort estimates"
+    - name: "12. Open Questions & Decisions"
+      description: "Remaining decisions needed"
+
+artifacts:
+  - name: "TDD.md"
+    description: "Main 30-50 page document"
+    format: markdown
+  - name: "api-spec.yaml"
+    description: "OpenAPI 3.1 specification"
+    format: yaml
+    validation: "Must pass OpenAPI validator"
+  - name: "database-schema.sql"
+    description: "Executable SQL DDL"
+    format: sql
+    validation: "Must be syntactically valid"
+  - name: "tasks.json"
+    description: "Implementation tasks"
+    format: json
+  - name: "types.ts"
+    description: "TypeScript interfaces"
+    format: typescript
+  - name: "architecture-diagram.mmd"
+    description: "Mermaid system diagram"
+    format: mermaid
+
+requirements_coverage:
+  total:
+    type: integer
+    description: "Total requirements"
+  covered:
+    type: integer
+    description: "Requirements in TDD"
+  uncovered:
+    type: array
+    items: {type: string}
+    description: "Missing requirement IDs"
+  validation: "total = covered + uncovered.length"
