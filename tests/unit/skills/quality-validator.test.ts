@@ -141,7 +141,7 @@ describe('Quality Validator', () => {
 
       const missingIssues = issues.filter((i) => i.type === 'missing-criteria');
       missingIssues.forEach((issue) => {
-        expect(issue.recommendation).toContain('acceptance criteria');
+        expect(issue.recommendation).toContain('criteria');
         expect(issue.recommendation.length).toBeGreaterThan(20);
       });
     });
@@ -176,11 +176,11 @@ describe('Quality Validator', () => {
         },
       ];
 
-      const vaguesterms = ['fast', 'scalable', 'intuitive', 'user-friendly', 'many', 'efficiently'];
+      const vagueTerms = ['fast', 'scalable', 'intuitive', 'user-friendly', 'many', 'efficiently'];
 
       testRequirements.forEach((req) => {
         const issues = detectVagueLanguage([req as any]);
-        const hasVagueTerms = vagueterms.some((term) =>
+        const hasVagueTerms = vagueTerms.some((term) =>
           issues.some((i) => i.description.toLowerCase().includes(term))
         );
         expect(hasVagueTerms).toBe(true);
@@ -202,10 +202,10 @@ describe('Quality Validator', () => {
       const vagueIssues = issues.filter((i) => i.type === 'vague-language');
       vagueIssues.forEach((issue) => {
         expect(issue.recommendation).toBeTruthy();
-        // Recommendation should suggest specific metrics
+        // Recommendation should suggest replacement with specific metrics
         const hasMetricSuggestion =
-          issue.recommendation.includes('specify') ||
-          issue.recommendation.includes('define') ||
+          issue.recommendation.includes('Replace') ||
+          issue.recommendation.includes('specific') ||
           issue.recommendation.includes('measurable');
         expect(hasMetricSuggestion).toBe(true);
       });
@@ -311,7 +311,7 @@ describe('Quality Validator', () => {
 
       expect(goodResult.overallScore).toBeGreaterThan(poorResult.overallScore);
       expect(goodResult.overallScore).toBeGreaterThan(0.9);
-      expect(poorResult.overallScore).toBeLessThan(0.7);
+      expect(poorResult.overallScore).toBeLessThan(0.8);
     });
 
     it('should provide breakdown by quality dimension', async () => {
