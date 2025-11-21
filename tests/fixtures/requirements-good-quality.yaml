@@ -1,0 +1,62 @@
+metadata:
+  prd_source: "test-prd-good.md"
+  analyzed_at: "2025-11-20T12:00:00Z"
+  total_requirements: 3
+  complexity_average: 4.3
+  confidence_average: 0.93
+
+requirements:
+  - id: REQ-FUNC-001
+    type: functional
+    priority: high
+    complexity: 4
+    title: "User Registration with Email Verification"
+    description: "Users can create accounts using email and password, with email verification required before account activation"
+    acceptance_criteria:
+      - "Registration form with email and password fields"
+      - "Email format validation (RFC 5322 compliant)"
+      - "Password strength validation (min 8 chars, uppercase, lowercase, number, special char)"
+      - "Verification email sent within 30 seconds of registration"
+      - "Email contains unique verification link valid for 24 hours"
+      - "Account activated upon verification link click"
+      - "Unverified accounts cannot log in"
+    dependencies: []
+    confidence: 0.95
+    status: draft
+    issues: []
+
+  - id: REQ-PERF-001
+    type: performance
+    priority: high
+    complexity: 5
+    title: "Page Load Performance Under 2 Seconds"
+    description: "All application pages must load and become interactive within 2 seconds on 4G connection"
+    acceptance_criteria:
+      - "Time to First Byte (TTFB) under 500ms"
+      - "First Contentful Paint (FCP) under 1 second"
+      - "Time to Interactive (TTI) under 2 seconds"
+      - "Measured on 4G network (4Mbps download, 400ms latency)"
+      - "Performance metrics tracked with Real User Monitoring (RUM)"
+    dependencies: []
+    confidence: 0.92
+    status: draft
+    issues: []
+
+  - id: REQ-SEC-001
+    type: security
+    priority: critical
+    complexity: 4
+    title: "Password Storage with bcrypt Hashing"
+    description: "User passwords must be hashed using bcrypt with cost factor 12 before storage"
+    acceptance_criteria:
+      - "Passwords hashed with bcrypt algorithm"
+      - "Cost factor set to 12 (2^12 iterations)"
+      - "Unique salt generated per password"
+      - "Plaintext passwords never logged or stored"
+      - "Hash verification on authentication"
+      - "Password change generates new hash and salt"
+    dependencies:
+      - REQ-FUNC-001
+    confidence: 0.92
+    status: draft
+    issues: []
