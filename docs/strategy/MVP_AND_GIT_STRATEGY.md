@@ -3,12 +3,29 @@
 **Project**: MT-PRISM
 **Branch**: 001-prism-plugin
 **Created**: 2025-11-19
+**Last Updated**: 2025-11-20
+**Constitution Version**: 3.1.0
+
+## Current Status
+
+**Phase**: Foundation & Planning (Phase 1) ✅ **COMPLETE**
+**Current Branch**: `001-prism-plugin`
+**Completed Milestones**:
+- ✅ Constitution v3.1.0 ratified (2025-11-20)
+- ✅ Project specification finalized
+- ✅ Documentation structure established
+- ✅ Research artifacts (YAML Schema Validation with Zod)
+- ✅ AI documentation automation setup
+
+**Next Steps**: Begin MVP 1 implementation (PRD Analyzer skill)
 
 ## Overview
 
 This document defines the MVP (Minimum Viable Product) milestones and git strategy for MT-PRISM development. We'll use an incremental approach with 4 MVP releases, each adding core functionality.
 
 **Key Principle**: MT-PRISM is designed for **local development first**. No servers, no databases, no complex infrastructure. Just install and run on your machine.
+
+**Implementation Approach**: Using a single feature branch (`001-prism-plugin`) for integrated development across all MVPs, allowing for rapid iteration and cohesive plugin architecture.
 
 ---
 
@@ -271,8 +288,30 @@ MVP 4 (1 week)  → + TDD Generation (Complete!)
 
 ## Git Strategy
 
-### Branch Structure
+### Actual Branch Structure
 
+**Current Implementation**:
+```
+main (production)
+  ↓
+001-prism-plugin (feature branch for full plugin)
+  ↓
+  ├── Phase 1: Foundation & Planning ✅ COMPLETE
+  ├── Phase 2: MVP 1 - PRD Analyzer (in progress)
+  ├── Phase 3: MVP 2 - Figma Analyzer
+  ├── Phase 4: MVP 3 - Validation & Clarification
+  └── Phase 5: MVP 4 - TDD Generation
+```
+
+**Note**: Using a single integrated feature branch for the plugin allows for:
+- Cohesive architecture across all skills
+- Rapid iteration without merge overhead
+- Easier testing of skill interactions
+- Simplified dependency management
+
+### Planned Branch Structure (Original Strategy)
+
+For reference, the original strategy envisioned:
 ```
 main (production)
   ↓
@@ -286,6 +325,8 @@ develop (integration)
 ├── feature/provider-*
 └── hotfix/*
 ```
+
+**Adaptation**: The single branch approach (`001-prism-plugin`) is more appropriate for a cohesive plugin architecture where skills are tightly integrated.
 
 ### Branch Naming Convention
 
@@ -316,31 +357,54 @@ release/v[major].[minor].[patch]
 
 ### Workflow
 
-#### 1. Feature Development
+#### 1. Feature Development (Current Approach)
 
 ```bash
-# Start new feature
-git checkout develop
-git pull origin develop
-git checkout -b feature/mvp1-prd-analysis
+# Working on 001-prism-plugin branch
+git checkout 001-prism-plugin
+git pull origin 001-prism-plugin
+
+# Work on feature (e.g., PRD analyzer skill)
+git add .
+git commit -m "feat: implement PRD analyzer skill"
+
+# Push to remote
+git push origin 001-prism-plugin
+
+# Continue iterating on the same branch
+# When ready for MVP release, create PR to main
+```
+
+#### 1b. Feature Development (Alternative: Separate Feature Branches)
+
+For larger features that need isolation:
+
+```bash
+# Create sub-feature branch from 001-prism-plugin
+git checkout 001-prism-plugin
+git pull origin 001-prism-plugin
+git checkout -b feature/llm-abstraction
 
 # Work on feature
 git add .
-git commit -m "feat: implement PRD analyzer"
+git commit -m "feat: implement LLM provider abstraction"
 
 # Push to remote
-git push -u origin feature/mvp1-prd-analysis
+git push -u origin feature/llm-abstraction
 
-# Create Pull Request to develop
+# Create Pull Request to 001-prism-plugin
 # (requires review + approval)
+# After merge, delete feature branch
 ```
 
-#### 2. MVP Release
+#### 2. MVP Release (Current Approach)
 
 ```bash
-# Create release branch from develop
-git checkout develop
-git pull origin develop
+# When MVP 1 is ready on 001-prism-plugin
+git checkout 001-prism-plugin
+git pull origin 001-prism-plugin
+
+# Create release branch
 git checkout -b release/v0.1.0
 
 # Finalize release (bump version, update changelog)
@@ -358,11 +422,13 @@ git pull origin main
 git tag -a v0.1.0 -m "MVP 1: PRD Analysis"
 git push origin v0.1.0
 
-# Merge back to develop
-git checkout develop
+# Merge back to 001-prism-plugin to continue development
+git checkout 001-prism-plugin
 git merge main
-git push origin develop
+git push origin 001-prism-plugin
 ```
+
+**Note**: Since we don't have a `develop` branch, we merge releases back to the main feature branch (`001-prism-plugin`) to continue development toward the next MVP.
 
 #### 3. Hotfix
 
@@ -385,10 +451,10 @@ git pull origin main
 git tag -a v0.1.1 -m "Hotfix: Confluence auth"
 git push origin v0.1.1
 
-# Merge to develop
-git checkout develop
+# Merge to 001-prism-plugin (active development branch)
+git checkout 001-prism-plugin
 git merge main
-git push origin develop
+git push origin 001-prism-plugin
 ```
 
 ### Commit Message Convention
@@ -515,16 +581,24 @@ Brief description of changes
 - ✅ No force pushes
 - ✅ No deletions
 
-#### `develop` Branch
+#### `001-prism-plugin` Branch (Active Development)
+- ✅ Require pull request reviews (1) - for major changes
+- ✅ Require status checks to pass
+- ✅ No force pushes (use revert instead)
+- ⚠️ Allow force push for rebase (if needed, use with caution)
+
+#### `feature/*` Sub-branches (if used)
+- No restrictions
+- Can be force-pushed (for rebasing)
+- Can be deleted after merge to `001-prism-plugin`
+
+#### Future: `develop` Branch (If Created Later)
 - ✅ Require pull request reviews (1)
 - ✅ Require status checks to pass
 - ✅ No force pushes
 - ✅ No deletions
 
-#### `feature/*` Branches
-- No restrictions
-- Can be force-pushed (for rebasing)
-- Can be deleted after merge
+**Note**: Currently using simplified branch structure without `develop` branch for faster iteration during initial development.
 
 ---
 
@@ -804,25 +878,29 @@ git pull origin develop
 git branch -d feature/my-feature
 ```
 
-### Working on MVP
+### Working on MVP (Current Approach)
 
 ```bash
-# Each MVP has its own feature branch
-git checkout develop
-git checkout -b feature/mvp1-prd-analysis
+# All MVP work happens on 001-prism-plugin branch
+git checkout 001-prism-plugin
+git pull origin 001-prism-plugin
 
-# Work on MVP features
-# ... implement features ...
+# Work on MVP 1 features (PRD Analyzer)
+# ... implement PRD analyzer skill ...
+git add .
+git commit -m "feat(prd-analyzer): implement requirement extraction"
+git push origin 001-prism-plugin
 
-# When MVP complete, create PR to develop
-# After merge and testing, create release branch
-git checkout develop
+# Continue with MVP 1 features
+# ... implement validation, tests, etc ...
+
+# When MVP 1 is complete and tested, create release
 git checkout -b release/v0.1.0
 
 # Finalize release
 npm version minor  # Updates to v0.1.0
 git add .
-git commit -m "chore: release v0.1.0"
+git commit -m "chore: release v0.1.0 - MVP 1"
 
 # Create PR to main
 # After merge, tag and push
@@ -830,7 +908,19 @@ git checkout main
 git pull origin main
 git tag -a v0.1.0 -m "MVP 1: PRD Analysis"
 git push origin v0.1.0
+
+# Merge back to 001-prism-plugin and continue with MVP 2
+git checkout 001-prism-plugin
+git merge main
+git push origin 001-prism-plugin
 ```
+
+**Benefits of Single Branch Approach**:
+- Continuous integration of all skills
+- Easier testing of skill interactions
+- Clearer dependency management
+- Reduced merge conflicts
+- Faster iteration
 
 ---
 
@@ -886,25 +976,89 @@ git push origin v0.1.0
 
 ## Next Steps
 
-### Immediate (Week 1)
+### ✅ Completed (Phase 1: Foundation)
 1. ✅ Set up repository structure
-2. ✅ Configure branch protection
-3. ✅ Set up CI/CD pipelines
-4. ✅ Create MVP 1 feature branch
-5. ✅ Begin PRD analyzer implementation
+2. ✅ Constitution v3.1.0 ratified and documented
+3. ✅ Project specification finalized
+4. ✅ Documentation structure established
+5. ✅ Research artifacts created (YAML Schema Validation)
+6. ✅ AI documentation automation setup
+7. ✅ Created `001-prism-plugin` feature branch
 
-### Short-term (Weeks 2-5)
-1. Complete MVP 1 and release v0.1.0
-2. Complete MVP 2 and release v0.2.0
-3. Complete MVP 3 and release v0.3.0
-4. Complete MVP 4 and release v1.0.0
+### 🚧 Immediate (Phase 2: MVP 1 - Weeks 1-2)
+1. [ ] Set up TypeScript project structure
+2. [ ] Implement LLM provider abstraction layer
+3. [ ] Create PRD Analyzer skill
+4. [ ] Implement MCP Confluence integration
+5. [ ] Add YAML schema validation with Zod
+6. [ ] Write unit tests (90%+ coverage)
+7. [ ] Write integration tests
+8. [ ] Release v0.1.0
 
-### Long-term (Post v1.0.0)
+### 📋 Short-term (Phases 3-5: Weeks 3-5)
+1. Complete MVP 2 and release v0.2.0 (Figma Analyzer)
+2. Complete MVP 3 and release v0.3.0 (Validation & Clarification)
+3. Complete MVP 4 and release v1.0.0 (TDD Generation)
+4. Set up CI/CD pipelines (GitHub Actions)
+5. Configure branch protection rules
+
+### 🔮 Long-term (Post v1.0.0)
 1. Gather user feedback
-2. Plan v1.1.0 features
-3. Consider v2.0.0 (breaking changes)
+2. Plan v1.1.0 features (performance optimizations)
+3. Consider v2.0.0 (breaking changes, multi-language support)
 
 ---
 
-**Status**: Ready to begin MVP 1 development! 🚀
-**Next**: Create `feature/mvp1-prd-analysis` branch and start coding
+**Status**: Foundation complete! Ready for MVP 1 implementation 🚀
+**Current Branch**: `001-prism-plugin`
+**Next**: Implement LLM provider abstraction and PRD Analyzer skill
+**Timeline**: MVP 1 target completion in 2 weeks
+
+---
+
+## Strategy Adaptations
+
+### Actual vs. Planned Approach
+
+This document originally outlined a git strategy with a `develop` branch and separate feature branches for each MVP (`feature/mvp1-prd-analysis`, `feature/mvp2-figma-analysis`, etc.).
+
+**Actual Implementation** uses a different approach:
+- **Single Feature Branch**: `001-prism-plugin` for all plugin development
+- **No Develop Branch**: Direct workflow from feature branch → main via release branches
+- **Integrated Development**: All skills developed on the same branch for better integration
+
+**Rationale for Adaptation**:
+1. **Cohesive Architecture**: Skills are tightly coupled and benefit from integrated development
+2. **Faster Iteration**: No merge overhead between MVP feature branches
+3. **Easier Testing**: Can test skill interactions immediately
+4. **Simpler Workflow**: Fewer branches to manage during rapid development phase
+5. **Better Dependencies**: Shared infrastructure (LLM abstraction, types, utils) developed once
+
+**When to Create Separate Branches**:
+- Large, isolated features that need extensive review
+- Experimental implementations that might not be merged
+- Platform-specific adaptations
+- Provider-specific implementations
+
+**Future Consideration**: May introduce a `develop` branch post-v1.0.0 if the team grows or if parallel workstreams emerge.
+
+### Constitution Alignment
+
+This strategy aligns with **Constitution v3.1.0** (ratified 2025-11-20), particularly:
+- **Principle I**: Skill-First Architecture
+- **Principle V**: Progressive Enhancement (MVP approach)
+- **Principle VIII**: LLM Provider Abstraction (multi-provider support)
+
+See: `.specify/memory/constitution.md` for complete architectural principles.
+
+---
+
+## Document History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2025-11-19 | Initial version with planned git strategy |
+| 1.1 | 2025-11-20 | Updated with actual implementation approach, constitution v3.1.0 reference, Phase 1 completion status |
+
+**Maintained By**: Project Lead
+**Review Cycle**: Weekly during MVP development, monthly post-v1.0.0
