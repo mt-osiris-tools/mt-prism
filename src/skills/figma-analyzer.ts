@@ -79,9 +79,9 @@ export async function analyzeFigmaDesign(
       current_date: new Date().toISOString(),
     });
 
-    // 4. Generate structured output
+    // 4. Generate structured output (already validated by generateStructured)
     console.log('🔍 Extracting components and design tokens...');
-    const result = await llm.generateStructured<ComponentsOutput>(
+    const validated = await llm.generateStructured<ComponentsOutput>(
       prompt,
       ComponentsOutputSchema,
       {
@@ -89,9 +89,7 @@ export async function analyzeFigmaDesign(
       }
     );
 
-    // 5. Validate output
     console.log('✓ Validating output...');
-    const validated = ComponentsOutputSchema.parse(result);
 
     const duration = Math.round((Date.now() - startTime) / 1000);
     console.log(`✅ Extracted ${validated.components.length} components (${duration}s)`);
