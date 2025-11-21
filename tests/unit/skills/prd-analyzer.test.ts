@@ -129,7 +129,7 @@ describe('PRD Analyzer', () => {
             status: 'draft',
             issues: [
               {
-                type: 'ambiguous',
+                type: 'ambiguity',
                 severity: 'medium',
                 description: 'Exact fields for business registration are TBD pending legal review',
               },
@@ -154,7 +154,7 @@ describe('PRD Analyzer', () => {
             status: 'draft',
             issues: [
               {
-                type: 'ambiguous',
+                type: 'ambiguity',
                 severity: 'high',
                 description: 'Definition of "fast" is unclear - needs specific latency target',
               },
@@ -251,12 +251,12 @@ describe('PRD Analyzer', () => {
             status: 'draft',
             issues: [
               {
-                type: 'ambiguous',
+                type: 'ambiguity',
                 severity: 'high',
                 description: 'AI provider not specified (GPT vs Claude)',
               },
               {
-                type: 'ambiguous',
+                type: 'ambiguity',
                 severity: 'medium',
                 description: 'Chat UI location unclear (modal vs inline)',
               },

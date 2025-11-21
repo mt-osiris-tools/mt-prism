@@ -36,10 +36,10 @@ requirements:
     confidence: 0.40
     status: draft
     issues:
-      - type: ambiguous
+      - type: ambiguity
         severity: high
         description: "Vague performance term 'fast' - should specify exact latency"
-      - type: ambiguous
+      - type: ambiguity
         severity: high
         description: "Vague term 'responsive' without metrics"
 

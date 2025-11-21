@@ -79,7 +79,7 @@ describe('Ambiguity Detection', () => {
 
       testCases.forEach((text) => {
         const issues = detectAmbiguities(text, []);
-        const tbd Issues = issues.filter((i) => i.type === 'incomplete');
+        const tbdIssues = issues.filter((i) => i.type === 'incomplete');
         expect(tbdIssues.length).toBeGreaterThan(0);
         expect(tbdIssues.some((i) => i.severity === 'high' || i.severity === 'critical')).toBe(true);
       });
