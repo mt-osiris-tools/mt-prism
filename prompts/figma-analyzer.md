@@ -412,7 +412,7 @@ Before submitting your output, verify:
 
 ## Figma File Data to Analyze
 
-{FIGMA_DATA}
+{{figma_data}}
 
 ## Your Analysis
 

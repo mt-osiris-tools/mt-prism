@@ -37,7 +37,7 @@ export const ComponentSchema = z.object({
   name: z.string().min(1),
   type: z.string().min(1),
   category: ComponentCategorySchema,
-  variants: z.array(ComponentVariantSchema).min(1, 'At least one variant required'),
+  variants: z.array(ComponentVariantSchema),
   properties: z.array(ComponentPropertySchema),
   design_tokens: DesignTokensSchema,
   usage: ComponentUsageSchema,
