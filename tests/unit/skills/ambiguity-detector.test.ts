@@ -15,7 +15,7 @@ describe('Ambiguity Detection', () => {
 
       testCases.forEach((text) => {
         const issues = detectAmbiguities(text, []);
-        const vag ueIssues = issues.filter((i) => i.type === 'ambiguous');
+        const vagueIssues = issues.filter((i) => i.type === 'ambiguous');
         expect(vagueIssues.length).toBeGreaterThan(0);
         expect(vagueIssues.some((i) => i.severity === 'high' || i.severity === 'medium')).toBe(true);
       });

@@ -13,7 +13,7 @@
  */
 
 import { createLLMProvider } from '../providers/index.js';
-import { loadAndInterpolatePrompt } from '../utils/prompts.js';
+import { preparePrompt } from '../utils/prompts.js';
 import { writeYAMLWithSchema } from '../utils/files.js';
 import { RequirementsOutputSchema } from '../schemas/requirement.js';
 import type { RequirementsOutput } from '../types/requirement.js';
@@ -69,7 +69,7 @@ export async function analyzePRD(
 
     // 2. Load and interpolate prompt template
     console.log('📝 Loading prompt template...');
-    const prompt = await loadAndInterpolatePrompt('prd-analyzer', {
+    const prompt = await preparePrompt('prd-analyzer', {
       prd_content: prdContent,
       session_id: sessionId,
       current_date: new Date().toISOString(),
