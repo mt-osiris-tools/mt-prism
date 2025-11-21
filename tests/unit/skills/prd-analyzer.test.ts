@@ -5,25 +5,27 @@ import { analyzePRD } from '../../../src/skills/prd-analyzer.js';
 import { RequirementsOutputSchema } from '../../../src/schemas/requirement.js';
 import type { RequirementsOutput, Requirement } from '../../../src/types/requirement.js';
 
-// Mock LLM provider
+// Create a shared mock provider instance
+const mockGenerateStructured = vi.fn();
+const mockProvider = {
+  generateStructured: mockGenerateStructured,
+  getInfo: vi.fn(() => ({ name: 'mock-provider', model: 'mock-model' })),
+  streamText: vi.fn(),
+  generateText: vi.fn(),
+  estimateCost: vi.fn(() => 0.01),
+};
+
+// Mock LLM provider to return shared instance
 vi.mock('../../../src/providers/index.js', () => ({
-  createLLMProvider: vi.fn(() => ({
-    generateStructured: vi.fn(),
-    getInfo: vi.fn(() => ({ name: 'mock-provider', model: 'mock-model' })),
-  })),
+  createLLMProvider: vi.fn(() => Promise.resolve(mockProvider)),
 }));
 
 describe('PRD Analyzer', () => {
   const FIXTURES_DIR = join(process.cwd(), 'tests/fixtures/prds');
-  let mockProvider: any;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
-
-    // Get mock provider instance
-    const { createLLMProvider } = await import('../../../src/providers/index.js');
-    mockProvider = await createLLMProvider();
   });
 
   describe('Core Functionality', () => {
@@ -34,7 +36,7 @@ describe('PRD Analyzer', () => {
 
       const mockOutput: RequirementsOutput = {
         metadata: {
-          generated_at: new Date().toISOString(),
+          analyzed_at: new Date().toISOString(),
           prd_source: 'simple-prd.md',
           total_requirements: 8,
           complexity_average: 3.5,
@@ -54,7 +56,7 @@ describe('PRD Analyzer', () => {
             ],
             dependencies: [],
             confidence: 0.95,
-            status: 'identified',
+            status: 'draft',
             issues: [],
           },
           {
@@ -73,19 +75,19 @@ describe('PRD Analyzer', () => {
             ],
             dependencies: ['REQ-FUNC-001'],
             confidence: 0.93,
-            status: 'identified',
+            status: 'draft',
             issues: [],
           },
         ],
       };
 
-      mockProvider.generateStructured.mockResolvedValue(mockOutput);
+      mockGenerateStructured.mockResolvedValue(mockOutput);
 
       // Act
       const result = await analyzePRD(prdContent, sessionId);
 
       // Assert
-      expect(mockProvider.generateStructured).toHaveBeenCalledOnce();
+      expect(mockGenerateStructured).toHaveBeenCalledOnce();
       expect(result).toHaveProperty('requirements');
       expect(result).toHaveProperty('metadata');
       expect(result.requirements).toBeInstanceOf(Array);
@@ -103,7 +105,7 @@ describe('PRD Analyzer', () => {
 
       const mockOutput: RequirementsOutput = {
         metadata: {
-          generated_at: new Date().toISOString(),
+          analyzed_at: new Date().toISOString(),
           prd_source: 'complex-prd.md',
           total_requirements: 15,
           complexity_average: 6.8,
@@ -124,7 +126,7 @@ describe('PRD Analyzer', () => {
             ],
             dependencies: [],
             confidence: 0.60, // Low confidence - fields TBD
-            status: 'identified',
+            status: 'draft',
             issues: [
               {
                 type: 'ambiguous',
@@ -149,7 +151,7 @@ describe('PRD Analyzer', () => {
             ],
             dependencies: ['REQ-FUNC-003'],
             confidence: 0.50, // Very low - "fast" is ambiguous
-            status: 'identified',
+            status: 'draft',
             issues: [
               {
                 type: 'ambiguous',
@@ -161,7 +163,7 @@ describe('PRD Analyzer', () => {
         ],
       };
 
-      mockProvider.generateStructured.mockResolvedValue(mockOutput);
+      mockGenerateStructured.mockResolvedValue(mockOutput);
 
       // Act
       const result = await analyzePRD(prdContent, sessionId);
@@ -185,7 +187,7 @@ describe('PRD Analyzer', () => {
 
       const mockOutput: RequirementsOutput = {
         metadata: {
-          generated_at: new Date().toISOString(),
+          analyzed_at: new Date().toISOString(),
           prd_source: 'minimal-prd.md',
           total_requirements: 3,
           complexity_average: 2.3,
@@ -202,13 +204,13 @@ describe('PRD Analyzer', () => {
             acceptance_criteria: ['Toggle switch in settings', 'Instant theme switch'],
             dependencies: [],
             confidence: 0.9,
-            status: 'identified',
+            status: 'draft',
             issues: [],
           },
         ],
       };
 
-      mockProvider.generateStructured.mockResolvedValue(mockOutput);
+      mockGenerateStructured.mockResolvedValue(mockOutput);
 
       // Act
       const result = await analyzePRD(prdContent, sessionId);
@@ -226,7 +228,7 @@ describe('PRD Analyzer', () => {
 
       const mockOutput: RequirementsOutput = {
         metadata: {
-          generated_at: new Date().toISOString(),
+          analyzed_at: new Date().toISOString(),
           prd_source: 'edge-case-prd.md',
           total_requirements: 5,
           complexity_average: 7.0,
@@ -246,7 +248,7 @@ describe('PRD Analyzer', () => {
             ],
             dependencies: [],
             confidence: 0.40,
-            status: 'identified',
+            status: 'draft',
             issues: [
               {
                 type: 'ambiguous',
@@ -268,7 +270,7 @@ describe('PRD Analyzer', () => {
         ],
       };
 
-      mockProvider.generateStructured.mockResolvedValue(mockOutput);
+      mockGenerateStructured.mockResolvedValue(mockOutput);
 
       // Act
       const result = await analyzePRD(prdContent, sessionId);
@@ -292,7 +294,7 @@ describe('PRD Analyzer', () => {
 
       const mockOutput: RequirementsOutput = {
         metadata: {
-          generated_at: new Date().toISOString(),
+          analyzed_at: new Date().toISOString(),
           prd_source: 'simple-prd.md',
           total_requirements: 8,
           complexity_average: 3.5,
@@ -308,19 +310,19 @@ describe('PRD Analyzer', () => {
           acceptance_criteria: [`Criterion ${i + 1}`],
           dependencies: [],
           confidence: 0.9,
-          status: 'identified',
+          status: 'draft',
           issues: [],
         })),
       };
 
-      mockProvider.generateStructured.mockResolvedValue(mockOutput);
+      mockGenerateStructured.mockResolvedValue(mockOutput);
 
       // Act
       const result = await analyzePRD(prdContent, sessionId);
 
       // Assert
       expect(result.metadata.total_requirements).toBe(result.requirements.length);
-      expect(result.metadata.generated_at).toBeDefined();
+      expect(result.metadata.analyzed_at).toBeDefined();
       expect(result.metadata.prd_source).toBeDefined();
       expect(result.metadata.complexity_average).toBeGreaterThan(0);
       expect(result.metadata.complexity_average).toBeLessThanOrEqual(10);
@@ -335,7 +337,7 @@ describe('PRD Analyzer', () => {
 
       const mockOutput: RequirementsOutput = {
         metadata: {
-          generated_at: new Date().toISOString(),
+          analyzed_at: new Date().toISOString(),
           prd_source: 'test.md',
           total_requirements: 3,
           complexity_average: 5.0, // (3 + 5 + 7) / 3
@@ -352,7 +354,7 @@ describe('PRD Analyzer', () => {
             acceptance_criteria: ['Criterion'],
             dependencies: [],
             confidence: 0.9,
-            status: 'identified',
+            status: 'draft',
             issues: [],
           },
           {
@@ -365,7 +367,7 @@ describe('PRD Analyzer', () => {
             acceptance_criteria: ['Criterion'],
             dependencies: [],
             confidence: 0.85,
-            status: 'identified',
+            status: 'draft',
             issues: [],
           },
           {
@@ -378,13 +380,13 @@ describe('PRD Analyzer', () => {
             acceptance_criteria: ['Criterion'],
             dependencies: [],
             confidence: 0.85,
-            status: 'identified',
+            status: 'draft',
             issues: [],
           },
         ],
       };
 
-      mockProvider.generateStructured.mockResolvedValue(mockOutput);
+      mockGenerateStructured.mockResolvedValue(mockOutput);
 
       // Act
       const result = await analyzePRD(prdContent, sessionId);
@@ -419,7 +421,7 @@ describe('PRD Analyzer', () => {
       const prdContent = 'Test PRD content';
       const sessionId = 'test-session-008';
 
-      mockProvider.generateStructured.mockRejectedValue(new Error('Provider timeout'));
+      mockGenerateStructured.mockRejectedValue(new Error('Provider timeout'));
 
       // Act & Assert
       await expect(analyzePRD(prdContent, sessionId)).rejects.toThrow('Provider timeout');
@@ -434,7 +436,7 @@ describe('PRD Analyzer', () => {
 
       const mockOutput: RequirementsOutput = {
         metadata: {
-          generated_at: new Date().toISOString(),
+          analyzed_at: new Date().toISOString(),
           prd_source: 'simple-prd.md',
           total_requirements: 2,
           complexity_average: 3.5,
@@ -451,7 +453,7 @@ describe('PRD Analyzer', () => {
             acceptance_criteria: ['Email validation', 'Password strength'],
             dependencies: [],
             confidence: 0.95,
-            status: 'identified',
+            status: 'draft',
             issues: [],
           },
           {
@@ -464,13 +466,13 @@ describe('PRD Analyzer', () => {
             acceptance_criteria: ['Load time < 2s'],
             dependencies: [],
             confidence: 0.89,
-            status: 'identified',
+            status: 'draft',
             issues: [],
           },
         ],
       };
 
-      mockProvider.generateStructured.mockResolvedValue(mockOutput);
+      mockGenerateStructured.mockResolvedValue(mockOutput);
 
       // Act
       const result = await analyzePRD(prdContent, sessionId);
@@ -486,7 +488,7 @@ describe('PRD Analyzer', () => {
 
       const mockOutput: RequirementsOutput = {
         metadata: {
-          generated_at: new Date().toISOString(),
+          analyzed_at: new Date().toISOString(),
           prd_source: 'test.md',
           total_requirements: 4,
           complexity_average: 4.0,
@@ -503,7 +505,7 @@ describe('PRD Analyzer', () => {
             acceptance_criteria: ['Criterion'],
             dependencies: [],
             confidence: 0.9,
-            status: 'identified',
+            status: 'draft',
             issues: [],
           },
           {
@@ -516,7 +518,7 @@ describe('PRD Analyzer', () => {
             acceptance_criteria: ['Criterion'],
             dependencies: [],
             confidence: 0.9,
-            status: 'identified',
+            status: 'draft',
             issues: [],
           },
           {
@@ -529,7 +531,7 @@ describe('PRD Analyzer', () => {
             acceptance_criteria: ['Criterion'],
             dependencies: [],
             confidence: 0.9,
-            status: 'identified',
+            status: 'draft',
             issues: [],
           },
           {
@@ -542,13 +544,13 @@ describe('PRD Analyzer', () => {
             acceptance_criteria: ['Criterion'],
             dependencies: [],
             confidence: 0.9,
-            status: 'identified',
+            status: 'draft',
             issues: [],
           },
         ],
       };
 
-      mockProvider.generateStructured.mockResolvedValue(mockOutput);
+      mockGenerateStructured.mockResolvedValue(mockOutput);
 
       // Act
       const result = await analyzePRD(prdContent, sessionId);
@@ -569,7 +571,7 @@ describe('PRD Analyzer', () => {
 
       const mockOutput: RequirementsOutput = {
         metadata: {
-          generated_at: new Date().toISOString(),
+          analyzed_at: new Date().toISOString(),
           prd_source: 'complex-prd.md',
           total_requirements: 1,
           complexity_average: 5.0,
@@ -586,13 +588,13 @@ describe('PRD Analyzer', () => {
             acceptance_criteria: ['Criterion'],
             dependencies: [],
             confidence: 0.8,
-            status: 'identified',
+            status: 'draft',
             issues: [],
           },
         ],
       };
 
-      mockProvider.generateStructured.mockResolvedValue(mockOutput);
+      mockGenerateStructured.mockResolvedValue(mockOutput);
 
       // Act
       const startTime = Date.now();

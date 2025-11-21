@@ -30,9 +30,9 @@ export const RequirementIssueSchema = z.object({
 
 export const RequirementTypeSchema = z.enum([
   'functional',
-  'non-functional',
+  'performance',
+  'security',
   'constraint',
-  'assumption',
 ]);
 
 export const RequirementPrioritySchema = z.enum([
@@ -86,6 +86,8 @@ export const RequirementsOutputSchema = z.object({
     analyzed_at: z.string().datetime(),
     analyzer_version: z.string().optional(),
     total_requirements: z.number().int().min(0),
+    complexity_average: z.number().min(1).max(10),
+    confidence_average: z.number().min(0).max(1),
   }),
   requirements: z.array(RequirementSchema),
 });

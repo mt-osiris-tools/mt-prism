@@ -7,9 +7,9 @@
 
 export type RequirementType =
   | 'functional'
-  | 'non-functional'
-  | 'constraint'
-  | 'assumption';
+  | 'performance'
+  | 'security'
+  | 'constraint';
 
 export type RequirementPriority = 'critical' | 'high' | 'medium' | 'low';
 

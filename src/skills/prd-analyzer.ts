@@ -92,8 +92,6 @@ export async function analyzePRD(
 
     const duration = Math.round((Date.now() - startTime) / 1000);
     console.log(`✅ Extracted ${validated.requirements.length} requirements (${duration}s)`);
-    console.log(`   Average complexity: ${validated.metadata.complexity_average.toFixed(1)}/10`);
-    console.log(`   Average confidence: ${(validated.metadata.confidence_average * 100).toFixed(1)}%`);
 
     // 5. Save output (optional, default true)
     if (options?.saveOutput !== false) {
