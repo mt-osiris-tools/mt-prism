@@ -49,7 +49,7 @@ export function classifyRequirement(text: string): ClassificationResult {
   ];
 
   const performanceMatches = performanceKeywords.filter((kw) => lowerText.includes(kw)).length;
-  const hasNumericMetric = /\d+\s*(ms|second|minute|user|request|transaction)/i.test(text);
+  const hasNumericMetric = /\d+\s*(ms|seconds?|minutes?|hours?|users?|requests?|transactions?|%|percent)/i.test(text);
 
   if (performanceMatches >= 2 || (performanceMatches >= 1 && hasNumericMetric)) {
     const confidence = Math.min(0.95, 0.6 + (performanceMatches * 0.1) + (hasNumericMetric ? 0.2 : 0));
