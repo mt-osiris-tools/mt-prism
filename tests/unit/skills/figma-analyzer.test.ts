@@ -112,7 +112,7 @@ describe('Figma Analyzer', () => {
       mockGenerateStructured.mockResolvedValue(mockOutput);
 
       // Act
-      const result = await analyzeFigmaDesign(figmaData, sessionId);
+      const result = await analyzeFigmaDesign(figmaData, sessionId, { saveOutput: false });
 
       // Assert
       expect(result).toBeDefined();
@@ -169,7 +169,7 @@ describe('Figma Analyzer', () => {
       mockGenerateStructured.mockResolvedValue(mockOutput);
 
       // Act
-      const result = await analyzeFigmaDesign(figmaData, sessionId);
+      const result = await analyzeFigmaDesign(figmaData, sessionId, { saveOutput: false });
 
       // Assert
       expect(result.components[0]?.variants).toHaveLength(3);
@@ -210,7 +210,7 @@ describe('Figma Analyzer', () => {
       mockGenerateStructured.mockResolvedValue(mockOutput);
 
       // Act
-      const result = await analyzeFigmaDesign(figmaData, sessionId);
+      const result = await analyzeFigmaDesign(figmaData, sessionId, { saveOutput: false });
 
       // Assert
       expect(result).toBeDefined();
@@ -256,7 +256,7 @@ describe('Figma Analyzer', () => {
 
       mockGenerateStructured.mockResolvedValue(mockOutput);
 
-      const result = await analyzeFigmaDesign(figmaData, sessionId);
+      const result = await analyzeFigmaDesign(figmaData, sessionId, { saveOutput: false });
 
       expect(result.components[0]?.category).toBe('atom');
       expect(result.components[1]?.category).toBe('atom');
@@ -289,7 +289,7 @@ describe('Figma Analyzer', () => {
 
       mockGenerateStructured.mockResolvedValue(mockOutput);
 
-      const result = await analyzeFigmaDesign(figmaData, sessionId);
+      const result = await analyzeFigmaDesign(figmaData, sessionId, { saveOutput: false });
 
       expect(result.components[0]?.category).toBe('molecule');
     });
@@ -331,7 +331,7 @@ describe('Figma Analyzer', () => {
 
       mockGenerateStructured.mockResolvedValue(mockOutput);
 
-      const result = await analyzeFigmaDesign(figmaData, sessionId);
+      const result = await analyzeFigmaDesign(figmaData, sessionId, { saveOutput: false });
 
       expect(result.components[0]?.category).toBe('organism');
       expect(result.components[1]?.category).toBe('organism');
@@ -375,7 +375,7 @@ describe('Figma Analyzer', () => {
 
       mockGenerateStructured.mockResolvedValue(mockOutput);
 
-      const result = await analyzeFigmaDesign(figmaData, sessionId);
+      const result = await analyzeFigmaDesign(figmaData, sessionId, { saveOutput: false });
 
       expect(result.components[0]?.variants).toHaveLength(2);
       expect(result.components[0]?.variants[0]?.name).toBe('layout=grid, state=default');
@@ -422,7 +422,7 @@ describe('Figma Analyzer', () => {
 
       mockGenerateStructured.mockResolvedValue(mockOutput);
 
-      const result = await analyzeFigmaDesign(figmaData, sessionId);
+      const result = await analyzeFigmaDesign(figmaData, sessionId, { saveOutput: false });
 
       expect(result.components[0]?.properties).toHaveLength(2);
       expect(result.components[0]?.properties[0]?.name).toBe('size');
@@ -474,7 +474,7 @@ describe('Figma Analyzer', () => {
 
       mockGenerateStructured.mockResolvedValue(mockOutput);
 
-      const result = await analyzeFigmaDesign(figmaData, sessionId);
+      const result = await analyzeFigmaDesign(figmaData, sessionId, { saveOutput: false });
 
       expect(result.design_tokens.colors).toBeDefined();
       expect(result.design_tokens.colors).toHaveProperty('primary-500');
@@ -517,7 +517,7 @@ describe('Figma Analyzer', () => {
 
       mockGenerateStructured.mockResolvedValue(mockOutput);
 
-      const result = await analyzeFigmaDesign(figmaData, sessionId);
+      const result = await analyzeFigmaDesign(figmaData, sessionId, { saveOutput: false });
 
       expect(result.components[0]?.design_tokens.colors).toBeDefined();
       expect(result.components[0]?.design_tokens.border_radius).toBeDefined();
@@ -570,7 +570,7 @@ describe('Figma Analyzer', () => {
 
       mockGenerateStructured.mockResolvedValue(mockOutput);
 
-      const result = await analyzeFigmaDesign(figmaData, sessionId);
+      const result = await analyzeFigmaDesign(figmaData, sessionId, { saveOutput: false });
 
       expect(result).toHaveProperty('metadata');
       expect(result).toHaveProperty('components');
@@ -627,7 +627,7 @@ describe('Figma Analyzer', () => {
 
       mockGenerateStructured.mockResolvedValue(mockOutput);
 
-      const result = await analyzeFigmaDesign(figmaData, sessionId);
+      const result = await analyzeFigmaDesign(figmaData, sessionId, { saveOutput: false });
 
       result.components.forEach((component) => {
         expect(component.id).toMatch(/^COMP-\d{3}$/);
