@@ -2,14 +2,17 @@
 
 **Get your PRD-to-TDD automation running in 1 hour**
 
-This guide will walk you through implementing the MT-PRISM Claude Code plugin from scratch, starting with a simple PRD analyzer and building up to the full workflow.
+This guide will walk you through implementing the MT-PRISM AI plugin from scratch, starting with a simple PRD analyzer and building up to the full workflow.
 
 ---
 
 ## Prerequisites
 
 - Node.js 20+ installed
-- Claude API key (from Anthropic Console)
+- AI Provider API key (choose one):
+  - Anthropic Claude (recommended)
+  - OpenAI GPT-4
+  - Google Gemini
 - Basic TypeScript knowledge
 - (Optional) Confluence and Figma access for testing
 
@@ -27,8 +30,15 @@ cd mt-prism-plugin
 # Initialize npm project
 npm init -y
 
-# Install dependencies
-npm install @anthropic-ai/sdk yaml zod
+# Install core dependencies
+npm install yaml zod
+
+# Install AI provider SDK (choose one or more)
+npm install @anthropic-ai/sdk        # For Claude
+npm install openai                   # For GPT-4
+npm install @google/generative-ai    # For Gemini
+
+# Install dev dependencies
 npm install -D typescript @types/node tsx vitest
 
 # Initialize TypeScript
@@ -62,13 +72,27 @@ Edit `tsconfig.json`:
 Create `.env`:
 
 ```bash
-ANTHROPIC_API_KEY=sk-ant-xxxxx
+# Choose your AI provider (anthropic, openai, or google)
+AI_PROVIDER=anthropic
+
+# Add the corresponding API key
+ANTHROPIC_API_KEY=sk-ant-xxxxx     # If using Claude
+# OPENAI_API_KEY=sk-xxxxx          # If using GPT-4
+# GOOGLE_API_KEY=xxxxx             # If using Gemini
+
+# Optional: Specify model (uses defaults if not set)
+# ANTHROPIC_MODEL=claude-sonnet-4-5-20250929
+# OPENAI_MODEL=gpt-4-turbo
+# GOOGLE_MODEL=gemini-pro
 ```
 
 Create `.env.example`:
 
 ```bash
-ANTHROPIC_API_KEY=your_api_key_here
+AI_PROVIDER=anthropic
+ANTHROPIC_API_KEY=your_anthropic_key_here
+OPENAI_API_KEY=your_openai_key_here
+GOOGLE_API_KEY=your_google_key_here
 ```
 
 ### Step 4: Project Structure
@@ -95,51 +119,137 @@ mt-prism-plugin/
 
 ## Part 2: Core Utilities (15 minutes)
 
-### Create Claude Client
+### Create LLM Provider Abstraction
 
-`src/utils/claude.ts`:
+`src/utils/llm.ts`:
 
 ```typescript
 import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
-export interface ClaudeOptions {
+export interface LLMOptions {
   temperature?: number;
   maxTokens?: number;
   model?: string;
 }
 
-export async function callClaude(
-  prompt: string,
-  options: ClaudeOptions = {}
-): Promise<string> {
-  const {
-    temperature = 0,
-    maxTokens = 8000,
-    model = 'claude-sonnet-4-5-20250929',
-  } = options;
+export interface LLMProvider {
+  generateText(prompt: string, options?: LLMOptions): Promise<string>;
+  getInfo(): { name: string; model: string; };
+}
 
-  const message = await client.messages.create({
-    model,
-    max_tokens: maxTokens,
-    temperature,
-    messages: [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
-  });
+class AnthropicProvider implements LLMProvider {
+  private client: Anthropic;
+  private defaultModel: string;
 
-  const textContent = message.content.find((block) => block.type === 'text');
-  if (!textContent || textContent.type !== 'text') {
-    throw new Error('No text content in Claude response');
+  constructor(apiKey: string, model?: string) {
+    this.client = new Anthropic({ apiKey });
+    this.defaultModel = model || 'claude-sonnet-4-5-20250929';
   }
 
-  return textContent.text;
+  async generateText(prompt: string, options: LLMOptions = {}): Promise<string> {
+    const message = await this.client.messages.create({
+      model: options.model || this.defaultModel,
+      max_tokens: options.maxTokens || 8000,
+      temperature: options.temperature ?? 0,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const textContent = message.content.find((block) => block.type === 'text');
+    if (!textContent || textContent.type !== 'text') {
+      throw new Error('No text content in response');
+    }
+    return textContent.text;
+  }
+
+  getInfo() {
+    return { name: 'Anthropic Claude', model: this.defaultModel };
+  }
+}
+
+class OpenAIProvider implements LLMProvider {
+  private client: OpenAI;
+  private defaultModel: string;
+
+  constructor(apiKey: string, model?: string) {
+    this.client = new OpenAI({ apiKey });
+    this.defaultModel = model || 'gpt-4-turbo';
+  }
+
+  async generateText(prompt: string, options: LLMOptions = {}): Promise<string> {
+    const response = await this.client.chat.completions.create({
+      model: options.model || this.defaultModel,
+      max_tokens: options.maxTokens || 8000,
+      temperature: options.temperature ?? 0,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    return response.choices[0]?.message?.content || '';
+  }
+
+  getInfo() {
+    return { name: 'OpenAI GPT-4', model: this.defaultModel };
+  }
+}
+
+class GoogleProvider implements LLMProvider {
+  private client: GoogleGenerativeAI;
+  private defaultModel: string;
+
+  constructor(apiKey: string, model?: string) {
+    this.client = new GoogleGenerativeAI(apiKey);
+    this.defaultModel = model || 'gemini-pro';
+  }
+
+  async generateText(prompt: string, options: LLMOptions = {}): Promise<string> {
+    const model = this.client.getGenerativeModel({
+      model: options.model || this.defaultModel,
+    });
+
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  }
+
+  getInfo() {
+    return { name: 'Google Gemini', model: this.defaultModel };
+  }
+}
+
+export async function createLLMProvider(): Promise<LLMProvider> {
+  const provider = process.env.AI_PROVIDER || 'anthropic';
+
+  switch (provider) {
+    case 'anthropic':
+      if (!process.env.ANTHROPIC_API_KEY) {
+        throw new Error('ANTHROPIC_API_KEY not set in .env');
+      }
+      return new AnthropicProvider(
+        process.env.ANTHROPIC_API_KEY,
+        process.env.ANTHROPIC_MODEL
+      );
+
+    case 'openai':
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY not set in .env');
+      }
+      return new OpenAIProvider(
+        process.env.OPENAI_API_KEY,
+        process.env.OPENAI_MODEL
+      );
+
+    case 'google':
+      if (!process.env.GOOGLE_API_KEY) {
+        throw new Error('GOOGLE_API_KEY not set in .env');
+      }
+      return new GoogleProvider(
+        process.env.GOOGLE_API_KEY,
+        process.env.GOOGLE_MODEL
+      );
+
+    default:
+      throw new Error(`Unknown AI provider: ${provider}`);
+  }
 }
 ```
 
@@ -247,7 +357,7 @@ export interface RequirementsOutput {
 
 ```typescript
 import yaml from 'yaml';
-import { callClaude } from '../utils/claude';
+import { createLLMProvider } from '../utils/llm';
 import { loadPrompt, fillPromptTemplate } from '../utils/prompts';
 import { writeFile } from '../utils/files';
 import { RequirementsOutput } from '../types/requirement';
@@ -271,17 +381,20 @@ export async function analyzePRD(
     PRD_CONTENT: options.prdContent,
   });
 
-  console.log('🤖 Calling Claude API...');
+  // Create LLM provider (works with any configured provider)
+  const llm = await createLLMProvider();
+  const providerInfo = llm.getInfo();
+  console.log(`🤖 Calling ${providerInfo.name} API...`);
 
-  // Call Claude
-  const response = await callClaude(prompt, {
+  // Call AI provider
+  const response = await llm.generateText(prompt, {
     temperature: 0,
     maxTokens: 8000,
   });
 
   console.log('📝 Parsing response...');
 
-  // Extract YAML from response (Claude often wraps it in ```yaml)
+  // Extract YAML from response (AI often wraps it in ```yaml)
   const yamlMatch = response.match(/```yaml\n([\s\S]*?)\n```/);
   const yamlContent = yamlMatch ? yamlMatch[1] : response;
 
@@ -450,7 +563,7 @@ Now that you have the pattern, add more skills:
 `src/skills/figma-analyzer.ts`:
 
 ```typescript
-import { callClaude } from '../utils/claude';
+import { createLLMProvider } from '../utils/llm';
 import { loadPrompt, fillPromptTemplate } from '../utils/prompts';
 import { ComponentsOutput } from '../types/component';
 
@@ -458,12 +571,13 @@ export async function analyzeFigma(
   figmaData: string,
   outputDir: string
 ): Promise<ComponentsOutput> {
+  const llm = await createLLMProvider();
   const promptTemplate = loadPrompt('figma-analyzer');
   const prompt = fillPromptTemplate(promptTemplate, {
     FIGMA_DATA: figmaData,
   });
 
-  const response = await callClaude(prompt);
+  const response = await llm.generateText(prompt);
   // ... parse and return
 }
 ```
@@ -628,11 +742,12 @@ export async function analyzePRD(
   try {
     // ... implementation
   } catch (error) {
-    if (error instanceof Anthropic.APIError) {
-      console.error('Claude API Error:', error.message);
-      if (error.status === 429) {
-        console.error('Rate limit exceeded. Wait before retrying.');
-      }
+    if (error.status === 429) {
+      console.error('Rate limit exceeded. Wait before retrying.');
+    } else if (error.status === 401) {
+      console.error('Invalid API key. Check your .env configuration.');
+    } else {
+      console.error('AI provider error:', error.message);
     }
     throw error;
   }
@@ -711,7 +826,7 @@ export function validateRequirementOutput(
 
 ## Troubleshooting
 
-### Claude returns invalid YAML
+### AI provider returns invalid YAML
 
 **Problem**: Response isn't valid YAML
 
@@ -731,18 +846,19 @@ function extractYAML(response: string): string {
 
 ### Rate limiting
 
-**Problem**: 429 errors from Claude API
+**Problem**: 429 errors from AI provider API
 
 **Solution**: Add retry with exponential backoff:
 
 ```typescript
-async function callClaudeWithRetry(
+async function generateTextWithRetry(
+  llm: LLMProvider,
   prompt: string,
   maxRetries = 3
 ): Promise<string> {
   for (let i = 0; i < maxRetries; i++) {
     try {
-      return await callClaude(prompt);
+      return await llm.generateText(prompt);
     } catch (error) {
       if (error.status === 429 && i < maxRetries - 1) {
         const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s
@@ -758,13 +874,17 @@ async function callClaudeWithRetry(
 
 ### Low quality output
 
-**Problem**: Claude's output doesn't match expectations
+**Problem**: AI provider's output doesn't match expectations
 
 **Solution**:
 1. Review prompt for clarity
 2. Add more examples to prompt
 3. Adjust temperature (lower = more deterministic)
-4. Try different model (opus for quality, haiku for speed)
+4. Try different provider or model:
+   - **Claude**: Opus for highest quality, Haiku for speed
+   - **GPT-4**: GPT-4 Turbo for balanced performance
+   - **Gemini**: Gemini Pro is cost-effective
+5. Compare outputs across providers using the same prompt
 
 ---
 

@@ -1,37 +1,37 @@
 <!--
 Sync Impact Report
 ==================
-Version: 2.0.0 → 3.0.0 (MAJOR: Pivot to Claude Code Plugin Architecture)
+Version: 3.0.0 → 3.1.0 (MINOR: Multi-Provider LLM Support + Multi-Platform Enhancements)
+
 Modified Principles:
-- Principle I: Agent-First → Skill-First Architecture (skills in Claude Code vs. independent agents)
-- Principle VI: Observable Operations → Simplified to local metrics and user feedback
-- Principle VII: Contract-Based Integration → MCP-based Integration (simplified for plugin)
-Added Sections:
-- Plugin Implementation Approach (replaces complex multi-agent infrastructure)
-- Simplified Quality Gates for plugin context (5 gates vs. 8)
-- Lightweight State Management (local filesystem vs. distributed databases)
-- Migration Path to Full System (optional future expansion)
-Removed Sections:
-- Complex infrastructure requirements (Kubernetes, Kafka, Redis, Neo4j)
-- Agent-level detailed specifications (now simplified to skill specs)
-- Heavy monitoring requirements (replaced with simple metrics)
-- Deployment architecture complexity
+- Principle I: Skill-First Architecture - Added multi-platform support context (7 AI assistants)
+- New Principle VIII: LLM Provider Abstraction - Standardized multi-provider AI interface
+
+Updated Sections:
+- Operational Guidance: Updated documentation paths (strategy/, integration/, reports/)
+- Performance Requirements: Confirmed budget ($58K) and cost estimates by provider
+- Data Formats: No changes (already compliant)
+
 Templates Status:
-- plan-template.md: ⚠ Needs update to reflect plugin workflow
-- spec-template.md: ⚠ Needs update for skill-based outputs
-- tasks-template.md: ✅ Compatible (task structure remains)
-- checklist-template.md: ⚠ Needs update for simplified gates
-Breaking Changes:
-- Plugin-first approach replaces multi-agent infrastructure
-- Simplified from 6 agents to 5 Claude Code skills
-- State management now local (not distributed)
-- MCP integrations required but simplified
-- Quality gates reduced from 8 to 5 core gates
+- plan-template.md: ✅ Compatible (no constitution-specific updates needed)
+- spec-template.md: ✅ Compatible (no constitution-specific updates needed)
+- tasks-template.md: ✅ Compatible (no constitution-specific updates needed)
+- checklist-template.md: ✅ Compatible (quality gates unchanged)
+
+New Features Added:
+- Multi-provider LLM support (Claude, GPT-4, Gemini)
+- LLM abstraction layer for provider independence
+- Multi-platform deployment (7 AI coding assistants)
+- Cost optimization through provider selection
+- Documentation reorganization reflected
+
 Follow-up Actions:
-- Review and approve plugin-first approach
-- Update planning templates for plugin context
-- Begin Phase 1 implementation (Week 1-2)
-- Validate with first PRD analysis
+- ✅ All templates reviewed and compatible
+- ✅ Documentation paths updated
+- ✅ Performance metrics confirmed
+- 📋 Consider adding provider-specific testing guidelines in future versions
+
+Breaking Changes: None (backward compatible additions)
 -->
 
 # MT-PRISM Constitution
@@ -41,13 +41,16 @@ Follow-up Actions:
 ### I. Skill-First Architecture
 
 Every feature MUST be decomposed into discrete Claude Code skills with clear boundaries.
-Skills operate within the Claude Code environment, leveraging native tools (Read, Write,
+Skills operate within AI coding assistant environments (Claude Code, Cursor, GitHub Copilot CLI,
+Aider, Windsurf, OpenAI Codex, VS Code Copilot), leveraging native tools (Read, Write,
 Edit, Bash, Grep, etc.) and MCP servers for external integrations. No complex infrastructure -
 skills are self-contained prompt-based capabilities coordinated through simple orchestration.
 
-**Rationale**: Claude Code plugin architecture enables rapid development (4-5 weeks vs. 20 weeks),
-zero infrastructure costs, and natural integration with developer workflows. Skills can be
-tested independently and composed into workflows without distributed systems complexity.
+**Rationale**: Plugin architecture enables rapid development (4-5 weeks vs. 20 weeks),
+zero infrastructure costs ($58K vs. $1.3M Year 1), and natural integration with developer
+workflows across multiple platforms. Skills can be tested independently and composed into
+workflows without distributed systems complexity. Multi-platform support (7 AI assistants)
+ensures maximum developer reach and adoption.
 
 ### II. Document-Driven Discovery
 
@@ -119,6 +122,29 @@ MCP servers must follow the standard JSON-RPC protocol and be versioned independ
 
 **Rationale**: MCP provides standard protocol for tool integration in Claude Code environment.
 This enables reusability, testability, and separation of concerns.
+
+### VIII. LLM Provider Abstraction
+
+All AI operations MUST use the unified LLM abstraction layer. Skills must NEVER call provider
+SDKs directly (Anthropic, OpenAI, Google). The abstraction layer provides:
+- Unified interface across providers (generateText, streamText, generateStructured)
+- Automatic provider selection based on configuration
+- Cost tracking and optimization
+- Graceful fallback and error handling
+- Schema-validated structured outputs (Zod)
+
+**Supported Providers**:
+- **Anthropic**: Claude Sonnet 4.5, Opus, Haiku (~$4/workflow)
+- **OpenAI**: GPT-4, GPT-4 Turbo (~$3.50/workflow)
+- **Google**: Gemini Pro, Ultra (~$2.50/workflow)
+
+**Provider Selection**: Users configure their preferred provider via `.env` file (`AI_PROVIDER=anthropic|openai|google`).
+Skills must remain provider-agnostic and work identically across all providers.
+
+**Rationale**: Provider abstraction enables cost optimization, vendor independence, and
+flexibility. Different teams can use different providers based on budget, compliance, or
+preference without changing skill implementations. This also future-proofs the system as
+new AI providers emerge.
 
 ## Skill Responsibilities
 
@@ -352,7 +378,7 @@ gate criteria before the next skill can execute.
 
 ### Plugin Workflow
 
-The system follows a five-step workflow executed within Claude Code:
+The system follows a five-step workflow executed within AI coding assistants:
 
 **Step 1: PRD Analysis**
 - Load PRD from Confluence or local file
@@ -404,6 +430,13 @@ User configuration (`.prism-config.yaml`):
 
 ```yaml
 version: 1.0
+
+# LLM Provider Configuration
+llm:
+  provider: anthropic  # anthropic | openai | google
+  model: claude-sonnet-4-5-20250929  # optional, uses defaults if not set
+  temperature: 0  # analysis tasks
+  max_tokens: 8000
 
 # MCP Configuration
 mcps:
@@ -500,23 +533,24 @@ Each skill MUST include:
 
 3. **Validation Logic**: Schema validation using Zod for:
    - Input parameters
-   - Claude responses
+   - LLM responses
    - Output files
 
 4. **Error Handling**:
    - MCP connection failures
-   - Claude API errors
+   - LLM provider API errors
    - Invalid input handling
-   - Graceful degradation
+   - Graceful degradation with fallback providers
 
 5. **Tests** (80%+ coverage):
    - Unit tests for core logic
    - Integration tests with MCPs
+   - Provider-agnostic tests (run with all LLM providers)
    - Example-based tests with real data
 
 ### Prompt Engineering Standards
 
-All Claude prompts MUST follow these guidelines:
+All LLM prompts MUST follow these guidelines:
 
 - **Temperature**: 0 for analysis tasks, 0.3 for generation tasks
 - **Max Tokens**: 8000 for analysis, up to 16000 for TDD generation
@@ -524,6 +558,7 @@ All Claude prompts MUST follow these guidelines:
 - **Examples**: Include 2-4 few-shot examples covering edge cases
 - **Output Format**: Specify exact YAML/JSON/Markdown structure
 - **Quality Checks**: Include verification checklist at end of prompt
+- **Provider Agnostic**: Prompts must work identically across Claude, GPT-4, and Gemini
 
 ### Performance Requirements
 
@@ -535,6 +570,16 @@ All Claude prompts MUST follow these guidelines:
 | Clarifier | Real-time | 10K tokens | >95% |
 | TDD Generator | 5 min | 100K tokens | 4.5/5 rating |
 | **Full Workflow** | **20 min** | **300K tokens** | **E2E success** |
+
+### Cost Estimates (Per Full Workflow)
+
+| Provider | Input Tokens | Output Tokens | Cost/Workflow | Annual (100/month) |
+|----------|-------------|---------------|---------------|-------------------|
+| Anthropic Claude | ~40K | ~12K | ~$4.00 | ~$4,800 |
+| OpenAI GPT-4 | ~40K | ~12K | ~$3.50 | ~$4,200 |
+| Google Gemini | ~40K | ~12K | ~$2.50 | ~$3,000 |
+
+**Budget Estimate**: $58K total Year 1 cost (development + API usage)
 
 ## Migration Path to Full System
 
@@ -554,6 +599,7 @@ From plugin to full system:
 - ✅ Output schemas (reuse directly)
 - ✅ Validation logic (port to distributed agents)
 - ✅ MCP integrations (same servers)
+- ✅ LLM abstraction layer (reuse directly)
 - ❌ Infrastructure (build new: Kubernetes, databases, etc.)
 - ❌ Orchestration (add Temporal/Airflow)
 - ❌ Web dashboard (build new: Next.js)
@@ -562,14 +608,18 @@ From plugin to full system:
 
 **Plugin Architecture** (current):
 ```
-Claude Code → Skills → MCPs → External Services
+AI Coding Assistant → Skills → LLM Abstraction → Claude/GPT-4/Gemini
+                              ↓
+                             MCPs → External Services
 ```
 
 **Full System Architecture** (future):
 ```
-API Gateway → Temporal → Agents → Kafka → MCPs → External Services
-                ↓
-          PostgreSQL + Redis + Neo4j
+API Gateway → Temporal → Agents → LLM Abstraction → Claude/GPT-4/Gemini
+                ↓                        ↓
+          PostgreSQL + Redis        Kafka → MCPs → External Services
+                                         ↓
+                                      Neo4j
 ```
 
 ## Governance
@@ -599,6 +649,7 @@ All pull requests MUST include:
 - Skill responsibility verification
 - Quality gate validation
 - MCP compatibility check
+- LLM provider abstraction compliance (no direct SDK calls)
 - Test coverage verification (80%+ for new code)
 - Documentation updates
 
@@ -609,30 +660,35 @@ All pull requests MUST include:
 - Integration tests with Confluence MCP
 - Performance benchmarks met
 - Example-based validation with 5+ real PRDs
+- Provider-agnostic (tested with all LLM providers)
 
 **Figma Analyzer**:
 - Unit test coverage: > 90%
 - Integration tests with Figma MCP
 - Component extraction validated with 5+ real files
 - Screenshot generation working
+- Provider-agnostic (tested with all LLM providers)
 
 **Requirements Validator**:
 - Unit test coverage: > 90%
 - Gap detection validated (>90% accuracy)
 - Question quality validated (manual review)
 - Edge cases tested
+- Provider-agnostic (tested with all LLM providers)
 
 **Clarification Manager**:
 - Unit test coverage: > 85%
 - All distribution modes tested (interactive, jira, slack)
 - Response parsing validated
 - Requirement update logic tested
+- Provider-agnostic (tested with all LLM providers)
 
 **TDD Generator**:
 - Unit test coverage: > 85%
 - OpenAPI validation passing
 - SQL syntax validation passing
 - TDD quality: 4.5/5 on manual review
+- Provider-agnostic (tested with all LLM providers)
 
 ## Security & Privacy Requirements
 
@@ -641,13 +697,14 @@ All skills MUST:
 - Store credentials in environment variables (never in code or config files)
 - Use HTTPS/TLS for all MCP communications
 - Sanitize sensitive data from logs and metrics
-- Respect user privacy (PRD content sent to Claude API - documented)
+- Respect user privacy (PRD content sent to LLM API - documented)
 - Implement rate limiting for external APIs
 - Follow principle of least privilege for MCP access
+- Support all LLM providers with equal security standards
 
 ### Data Privacy
 
-**What Goes to Claude API**:
+**What Goes to LLM APIs**:
 - PRD content (requirements text)
 - Figma component data (names, properties)
 - Validation results
@@ -659,11 +716,13 @@ All skills MUST:
 - Generated TDD files (saved locally)
 - Metrics and logs
 - Session state
+- Provider selection configuration
 
 **User Control**:
 - Users can delete all workflow data (`.prism/` directory)
 - 30-day data retention default (configurable)
 - No telemetry without explicit opt-in
+- Choice of LLM provider (for compliance/privacy preferences)
 
 ## Operational Guidance
 
@@ -672,45 +731,49 @@ rules for the MT-PRISM plugin. For operational details and development guidance,
 
 - **README.md**: Project overview and quick start
 - **QUICKSTART.md**: Step-by-step implementation guide (1 hour)
-- **app_adn.md**: Detailed architecture and implementation specifications
-- **docs/specs/**: Individual skill specifications
-- **prompts/**: Claude-optimized prompt templates
+- **AI_AGENT.md**: AI assistant guidance and project context
+- **docs/strategy/MVP_AND_GIT_STRATEGY.md**: Development roadmap and git workflow
+- **docs/strategy/LOCAL_FIRST_STRATEGY.md**: Zero-infrastructure architecture principles
+- **docs/integration/LLM_PROVIDER_GUIDE.md**: Multi-provider LLM configuration
+- **docs/integration/AGENT_INTEGRATION_GUIDE.md**: Platform-specific setup (7 AI assistants)
+- **docs/integration/MULTI_PROVIDER_MIGRATION.md**: Migration guide for multi-provider support
+- **specs/001-prism-plugin/spec.md**: Detailed plugin specification
 
 ## Version History
 
-**Version**: 3.0.0 | **Ratified**: 2025-11-05 | **Last Amended**: 2025-11-05
+**Version**: 3.1.0 | **Ratified**: 2025-11-05 | **Last Amended**: 2025-11-20
 
-**Changes from 2.0.0**:
+**Changes from 3.0.0**:
 
-- **MAJOR PIVOT**: Restructured for Claude Code plugin architecture (not distributed multi-agent system)
-- Replaced "Agent-First" with "Skill-First" architecture principle
-- Simplified from 6 agents to 5 Claude Code skills
-- Removed complex infrastructure requirements (Kubernetes, Kafka, databases)
-- Simplified quality gates from 8 to 5 core gates
-- Updated MCP integration requirements for plugin context
-- Simplified monitoring to local metrics and user feedback
-- Added migration path section for future full system expansion
-- Updated all agent responsibilities to skill responsibilities
-- Simplified state management to local filesystem
+- **MINOR UPDATE**: Added multi-provider LLM support and multi-platform enhancements
+- Added new Principle VIII: LLM Provider Abstraction
+- Updated Principle I to include multi-platform support (7 AI coding assistants)
+- Updated Configuration Format to include LLM provider settings
+- Updated Development Standards to require provider-agnostic testing
+- Updated Operational Guidance with reorganized documentation paths
+- Confirmed budget at $58K (was $60K estimate)
+- Added cost estimates per provider (Anthropic ~$4, OpenAI ~$3.50, Google ~$2.50 per workflow)
+- Updated Security & Privacy to include provider selection considerations
+- Updated Skill-Specific Compliance to require testing across all providers
 
 **Migration Notes**:
 
-- This version represents a fundamental architectural pivot from full multi-agent system to Claude Code plugin
-- Cost reduction: ~95% ($60K vs. $1.3M Year 1)
-- Timeline reduction: 80% (4-5 weeks vs. 20 weeks)
-- Infrastructure simplified: Zero infrastructure needed
-- All documentation updated to reflect plugin approach
-- Prompts and templates created for immediate use
-- Implementation can start immediately
+- All existing skills must be updated to use LLM abstraction layer (no direct SDK calls)
+- Configuration files must include `llm.provider` setting
+- Tests must validate behavior across all three providers (Claude, GPT-4, Gemini)
+- Documentation updated to reflect multi-provider and multi-platform support
+- No breaking changes to existing architecture or quality gates
 
-**Rationale for MAJOR Version**:
+**Rationale for MINOR Version**:
 
-This is a MAJOR version bump because it represents a fundamental change in how the system is
-architected, deployed, and operated. While the core mission (PRD-to-TDD automation) remains
-unchanged, the implementation approach is completely different. However, the system can still
-migrate to the full multi-agent architecture in the future, reusing 70-80% of the work.
+This is a MINOR version bump because we're adding a new architectural principle (LLM Provider
+Abstraction) and expanding platform support, but not removing or fundamentally changing existing
+principles. The changes are backward compatible - skills can be gradually migrated to the
+abstraction layer without disrupting the overall architecture.
 
 ---
 
-**Previous Version (2.0.0)**: Full multi-agent system with distributed infrastructure
-**Current Version (3.0.0)**: Claude Code plugin with optional future expansion to full system
+**Previous Versions**:
+- **Version 3.0.0** (2025-11-05): Claude Code plugin architecture (pivot from distributed system)
+- **Version 2.0.0**: Full multi-agent distributed system with infrastructure
+- **Version 1.0.0**: Initial agent-based architecture

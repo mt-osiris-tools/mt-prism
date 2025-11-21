@@ -4,13 +4,13 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
-[![Claude](https://img.shields.io/badge/Claude-Sonnet%204.5-purple)](https://www.anthropic.com/claude)
+[![AI Powered](https://img.shields.io/badge/AI-Multi--Provider-purple)](https://github.com/your-org/mt-prism)
 
 ---
 
 ## What is MT-PRISM?
 
-MT-PRISM automates the tedious process of converting Product Requirements Documents (PRDs) and Figma designs into comprehensive Technical Design Documents (TDDs). It uses Claude AI to:
+MT-PRISM automates the tedious process of converting Product Requirements Documents (PRDs) and Figma designs into comprehensive Technical Design Documents (TDDs). It uses AI language models to:
 
 1. **Extract requirements** from PRDs (Confluence or local files)
 2. **Analyze Figma designs** to extract UI components
@@ -19,6 +19,22 @@ MT-PRISM automates the tedious process of converting Product Requirements Docume
 5. **Produce complete TDDs** with API specs, database schemas, and task breakdowns
 
 **Result**: Transform weeks of manual work into minutes.
+
+**Supported AI Providers**: Claude (Anthropic), GPT-4 (OpenAI), Gemini (Google), and more.
+
+**Supported Platforms**: Works with all major AI coding assistants:
+
+| Platform | Type | Status | Best For |
+|----------|------|--------|----------|
+| **Claude Code** | Desktop IDE | ✅ Ready | Full-featured development |
+| **Claude Code CLI** | Command Line | ✅ Ready | Claude terminal users |
+| **Cursor** | Desktop IDE | ✅ Ready | VS Code-like experience |
+| **GitHub Copilot CLI** | Command Line | ✅ Ready | Terminal workflows |
+| **OpenAI Codex** | API/SDK | ✅ Ready | Custom integrations |
+| **Codex CLI** | Command Line | ✅ Ready | Scripting & automation |
+| **VS Code (OpenCode)** | Desktop IDE | ✅ Ready | VS Code native users |
+
+See [Agent Integration Guide](docs/AGENT_INTEGRATION_GUIDE.md) for detailed setup instructions.
 
 ---
 
@@ -99,16 +115,27 @@ Total time: 17 minutes
 
 MT-PRISM can be implemented in two ways:
 
-### Option 1: Claude Code Plugin (Recommended)
+### Option 1: AI Agent Plugin (Recommended)
 
 **Best for**: Individual developers, small teams, quick start
 
 - ✅ **Fast to build**: 4-5 weeks
 - ✅ **Low cost**: ~$60K Year 1
-- ✅ **No infrastructure**: Runs in Claude Code
-- ✅ **Easy to use**: Familiar Claude Code interface
+- ✅ **No infrastructure**: Runs with any AI coding assistant
+- ✅ **Easy to use**: Works with your preferred AI development environment
+- ✅ **Flexible**: Switch between AI providers (Claude, GPT-4, Gemini)
+- ✅ **Platform agnostic**: Integrate with Claude Code, Cursor, Copilot CLI, Aider, and more
 
-See: [Plugin Proposal](docs/planning/PLUGIN_PROPOSAL.md)
+**Supported Platforms**:
+- Claude Code (native plugin)
+- Claude Code CLI (native CLI)
+- Cursor (extension)
+- GitHub Copilot CLI (CLI wrapper)
+- OpenAI Codex (programmatic API)
+- Codex CLI (command-line tool)
+- VS Code / OpenCode (extension)
+
+See: [Agent Integration Guide](docs/AGENT_INTEGRATION_GUIDE.md)
 
 ### Option 2: Full Multi-Agent System
 
@@ -130,7 +157,7 @@ See: [Implementation Plan](docs/planning/IMPLEMENTATION_PLAN.md)
 
 ### Prerequisites
 - Node.js 20+
-- Claude API key
+- AI Provider API key (Anthropic Claude, OpenAI GPT-4, or Google Gemini)
 - (Optional) Confluence and Figma access
 
 ### Installation
@@ -146,8 +173,16 @@ npm install
 # Copy environment template
 cp .env.example .env
 
-# Add your Claude API key to .env
+# Add your AI provider API key to .env
+# For Anthropic Claude:
 ANTHROPIC_API_KEY=sk-ant-xxxxx
+# For OpenAI GPT-4:
+OPENAI_API_KEY=sk-xxxxx
+# For Google Gemini:
+GOOGLE_API_KEY=xxxxx
+
+# Set your preferred provider (default: anthropic)
+AI_PROVIDER=anthropic
 ```
 
 ### Run Your First Analysis
@@ -174,8 +209,9 @@ See [QUICKSTART.md](QUICKSTART.md) for a complete step-by-step guide (1 hour).
 | Document | Description |
 |----------|-------------|
 | [QUICKSTART.md](QUICKSTART.md) | Get started in 1 hour |
-| [Plugin Proposal](docs/planning/PLUGIN_PROPOSAL.md) | Claude Code plugin architecture |
-| [Approach Comparison](docs/planning/APPROACH_COMPARISON.md) | Plugin vs. full system |
+| [Agent Integration Guide](docs/AGENT_INTEGRATION_GUIDE.md) | Platform-specific setup (Claude Code, Cursor, Aider, etc.) |
+| [LLM Provider Guide](docs/LLM_PROVIDER_GUIDE.md) | Configure AI providers (Claude, GPT-4, Gemini) |
+| [Multi-Provider Migration](docs/MULTI_PROVIDER_MIGRATION.md) | Migration guide for multi-provider support |
 
 ### 📖 Detailed Specifications
 
@@ -205,7 +241,8 @@ See [QUICKSTART.md](QUICKSTART.md) for a complete step-by-step guide (1 hour).
 
 ```
 ┌─────────────────────────────────────┐
-│        Claude Code UI               │
+│   AI Coding Assistant UI            │
+│   (Claude Code, Cursor, Aider, etc.)│
 └─────────────────────────────────────┘
                  │
 ┌─────────────────────────────────────┐
@@ -217,6 +254,13 @@ See [QUICKSTART.md](QUICKSTART.md) for a complete step-by-step guide (1 hour).
 │  │  prism.clarify              │   │
 │  │  prism.generate-tdd         │   │
 │  │  prism.discover (full flow) │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│  ┌─────────────────────────────┐   │
+│  │    LLM Abstraction Layer    │   │
+│  │  • Anthropic (Claude)       │   │
+│  │  • OpenAI (GPT-4)           │   │
+│  │  • Google (Gemini)          │   │
 │  └─────────────────────────────┘   │
 └─────────────────────────────────────┘
                  │
@@ -247,7 +291,10 @@ See [QUICKSTART.md](QUICKSTART.md) for a complete step-by-step guide (1 hour).
 ### Core
 - **Language**: TypeScript 5.3+
 - **Runtime**: Node.js 20 LTS
-- **AI**: Claude Sonnet 4.5 (Anthropic)
+- **AI Providers**:
+  - Anthropic Claude (Sonnet 4.5, Opus, Haiku)
+  - OpenAI (GPT-4, GPT-4 Turbo)
+  - Google Gemini (Pro, Ultra)
 - **Protocol**: MCP (Model Context Protocol)
 
 ### Integrations
@@ -271,11 +318,13 @@ See [QUICKSTART.md](QUICKSTART.md) for a complete step-by-step guide (1 hour).
 - 4-5 weeks
 - 1-2 engineers
 
-**Operation**: ~$6,000/year
-- Claude API: ~$500/month (100 workflows)
+**Operation**: ~$6,000/year (varies by provider)
+- **Claude API**: ~$500/month (100 workflows)
+- **GPT-4 API**: ~$400/month (100 workflows)
+- **Gemini API**: ~$300/month (100 workflows)
 - No infrastructure costs
 
-**Total Year 1**: **~$60,000**
+**Total Year 1**: **~$60,000** (with Claude) to **~$57,600** (with Gemini)
 
 ### Full System
 
@@ -386,8 +435,14 @@ mt-prism/
 
 ## FAQ
 
-### Q: Do I need Claude Code to use this?
-**A**: For the plugin approach, yes. For the full system, no.
+### Q: Which AI coding platforms are supported?
+**A**: MT-PRISM works with Claude Code, Cursor, GitHub Copilot CLI, Aider, Continue.dev, and Cody. See the [Agent Integration Guide](docs/AGENT_INTEGRATION_GUIDE.md) for setup instructions.
+
+### Q: Can I switch between different platforms?
+**A**: Yes! MT-PRISM uses a platform-agnostic design. You can use Claude Code for analysis, then switch to Aider for implementation, or any combination.
+
+### Q: Do I need a specific AI coding assistant to use this?
+**A**: No! MT-PRISM works with any supported AI coding assistant. Choose based on your preference: Claude Code (native), Cursor (VS Code-like), CLI tools (Copilot CLI, Aider), or VS Code extensions (Continue, Cody).
 
 ### Q: Can it work with other design tools besides Figma?
 **A**: Currently Figma only. Other tools (Sketch, Adobe XD) could be added.
@@ -401,8 +456,19 @@ mt-prism/
 ### Q: Can I customize the TDD template?
 **A**: Yes! See [templates/tdd-template.md](templates/tdd-template.md).
 
-### Q: Is my data sent to Anthropic?
-**A**: Yes, PRD and Figma content is sent to Claude API. Review Anthropic's [data privacy policy](https://www.anthropic.com/legal/privacy).
+### Q: Which AI provider is best for my use case?
+**A**:
+- **Claude (Anthropic)**: Best overall quality, strongest reasoning
+- **GPT-4 (OpenAI)**: Good balance of speed and quality
+- **Gemini (Google)**: Most cost-effective option
+
+See [LLM Provider Guide](docs/LLM_PROVIDER_GUIDE.md) for detailed comparison.
+
+### Q: Is my data sent to AI providers?
+**A**: Yes, PRD and Figma content is sent to your chosen AI provider's API. Review their data privacy policies:
+- [Anthropic Privacy Policy](https://www.anthropic.com/legal/privacy)
+- [OpenAI Privacy Policy](https://openai.com/policies/privacy-policy)
+- [Google Privacy Policy](https://policies.google.com/privacy)
 
 ---
 
@@ -415,6 +481,8 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## Acknowledgments
 
 - **Anthropic** for Claude AI
+- **OpenAI** for GPT-4
+- **Google** for Gemini
 - **Model Context Protocol** for integration framework
 - **Atlassian** for Confluence API
 - **Figma** for Figma API

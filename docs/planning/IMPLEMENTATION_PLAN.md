@@ -1,198 +1,318 @@
 # MT-PRISM Implementation Plan
-## Multi-Agent PRD-to-TDD Automation System
+## Local-First AI Plugin for PRD-to-TDD Automation
 
-**Version**: 1.0
-**Date**: 2025-11-05
-**Status**: Planning Phase
+**Version**: 2.0
+**Date**: 2025-11-20
+**Status**: Active Development
+**Approach**: Plugin (see APPROACH_COMPARISON.md for rationale)
 
 ---
 
 ## Executive Summary
 
-This document outlines the comprehensive implementation plan for the MT-PRISM multi-agent system. The project will be delivered in 6 phases over approximately 16-20 weeks, with each phase building upon the previous one.
+This document outlines the implementation plan for MT-PRISM as a **local-first AI plugin** that works with any AI coding assistant (Claude Code, Cursor, GitHub Copilot CLI, etc.). The project will be delivered in 4-5 phases over approximately 4-5 weeks with 1-2 engineers.
+
+**Key Decision**: Based on cost-benefit analysis (APPROACH_COMPARISON.md), we are building MT-PRISM as a plugin first ($60K, 4-5 weeks) rather than a full distributed system ($1.3M, 20 weeks). This allows rapid validation with 70-80% code reuse if expanding to full system later.
 
 ### Project Goals
 
-1. Automate PRD analysis and requirement extraction from Confluence
+1. Automate PRD analysis and requirement extraction from Confluence/local files
 2. Analyze Figma designs and extract UI specifications
 3. Validate requirements against designs and identify gaps
 4. Manage iterative clarification loops with stakeholders
 5. Generate comprehensive Technical Design Documents (TDD)
-6. Provide CLI and web interface for system interaction
+6. Support multiple AI providers (Claude, GPT-4, Gemini)
+7. Work with multiple AI coding platforms (7 platforms)
+8. **Zero infrastructure** - runs entirely on developer's machine
 
 ### Success Metrics
 
 - **Automation Rate**: 80%+ of PRD-to-TDD workflow automated
 - **Accuracy**: 95%+ requirement extraction accuracy
-- **Response Time**: < 5 minutes for initial analysis
-- **Validation Coverage**: 100% requirement-to-design traceability
-- **Stakeholder Satisfaction**: 4.5/5 average rating
+- **Response Time**: < 2 min for PRD analysis, < 20 min for full workflow
+- **Validation Coverage**: 90%+ gap detection rate
+- **TDD Quality**: 4.5/5 average rating
+- **Infrastructure Cost**: $0 (zero infrastructure)
+- **Time to Market**: 4-5 weeks (vs 20 weeks for full system)
 
 ---
 
 ## Architecture Overview
 
-### System Components
+### Local-First Plugin Architecture
+
+**Design Philosophy**: Zero infrastructure. No servers, no databases, no Docker, no cloud services. Everything runs on the developer's machine within their AI coding assistant environment.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                  Presentation Layer                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │  CLI (oclif) │  │ Next.js SPA  │  │ Temporal UI  │  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  │
+│   AI Coding Assistant (User's Environment)              │
+│   (Claude Code, Cursor, Aider, GitHub Copilot CLI, etc.)│
 └─────────────────────────────────────────────────────────┘
                           │
 ┌─────────────────────────────────────────────────────────┐
-│                    API Gateway (Kong)                    │
-│              Authentication & Rate Limiting              │
+│              MT-PRISM Plugin                             │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  Skills (5 core capabilities)                    │  │
+│  │  • prism.analyze-prd    - Extract requirements   │  │
+│  │  • prism.analyze-figma  - Extract UI components  │  │
+│  │  • prism.validate       - Cross-validate         │  │
+│  │  • prism.clarify        - Manage Q&A             │  │
+│  │  • prism.generate-tdd   - Generate TDD           │  │
+│  │  • prism.discover       - Full workflow          │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  LLM Abstraction Layer (Multi-Provider)          │  │
+│  │  • Anthropic (Claude Sonnet 4.5, Opus, Haiku)   │  │
+│  │  • OpenAI (GPT-4, GPT-4 Turbo)                   │  │
+│  │  • Google (Gemini Pro, Ultra)                    │  │
+│  │                                                   │  │
+│  │  Unified interface: generateText(), streamText(), │  │
+│  │  generateStructured(), estimateCost()            │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  Local Storage (.prism/ directory)               │  │
+│  │  • config.yaml          - User configuration     │  │
+│  │  • session.json         - Current session state  │  │
+│  │  • outputs/             - All generated files    │  │
+│  │    - requirements.yaml, components.yaml          │  │
+│  │    - gaps.yaml, questions.yaml                   │  │
+│  │    - TDD.md, api-spec.yaml, database-schema.sql  │  │
+│  │  • cache/               - Optional caching       │  │
+│  └──────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
                           │
 ┌─────────────────────────────────────────────────────────┐
-│              Orchestration Layer (Temporal)              │
-│                  Workflow Management                     │
-└─────────────────────────────────────────────────────────┘
-                          │
-┌─────────────────────────────────────────────────────────┐
-│                   Agent Layer (7 Agents)                 │
-│  ┌────────────┐ ┌────────────┐ ┌────────────┐          │
-│  │Orchestrator│ │PRD Analyzer│ │UI Analyzer │ ...      │
-│  └────────────┘ └────────────┘ └────────────┘          │
-└─────────────────────────────────────────────────────────┘
-                          │
-┌─────────────────────────────────────────────────────────┐
-│              Integration Layer (MCP Servers)             │
-│  Confluence | Figma | Jira | Git | Slack | OpenAPI      │
-└─────────────────────────────────────────────────────────┘
-                          │
-┌─────────────────────────────────────────────────────────┐
-│                     Event Bus (Kafka)                    │
-│              Agent-to-Agent Communication                │
-└─────────────────────────────────────────────────────────┘
-                          │
-┌─────────────────────────────────────────────────────────┐
-│                   Data Layer                             │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐             │
-│  │PostgreSQL│  │  Redis   │  │  Neo4j   │             │
-│  └──────────┘  └──────────┘  └──────────┘             │
+│    MCPs (Model Context Protocol) - External Services    │
+│  • Confluence (Atlassian MCP)  - PRD fetching          │
+│  • Figma                        - Design fetching       │
+│  • Jira (optional)              - Ticket creation       │
+│  • Slack (optional)             - Notifications         │
 └─────────────────────────────────────────────────────────┘
 ```
+
+### Multi-Provider Support
+
+All skills use a **unified LLM interface** that abstracts provider-specific details:
+
+```typescript
+interface LLMProvider {
+  generateText(prompt: string, options?: GenerateOptions): Promise<string>
+  streamText(prompt: string, options?: GenerateOptions): AsyncGenerator<string>
+  generateStructured<T>(prompt: string, schema: ZodSchema<T>): Promise<T>
+  getInfo(): ProviderInfo
+  estimateCost(tokens: number): number
+}
+```
+
+**Supported Providers**:
+- **Anthropic**: Claude Sonnet 4.5, Opus, Haiku (~$4/workflow)
+- **OpenAI**: GPT-4, GPT-4 Turbo (~$3.50/workflow)
+- **Google**: Gemini Pro, Ultra (~$2.50/workflow)
+
+Users configure their preferred provider via `.env` file.
+
+### Multi-Platform Support
+
+MT-PRISM works with **7 AI coding platforms**:
+
+1. **Claude Code** (Anthropic) - Native integration
+2. **Claude Code CLI** (Anthropic) - CLI environment
+3. **Cursor** (Anysphere) - VS Code fork with AI
+4. **GitHub Copilot CLI** (GitHub) - Terminal agent
+5. **OpenAI Codex** (OpenAI) - API-based
+6. **Codex CLI** (OpenAI) - Command-line interface
+7. **VS Code (OpenCode)** - Extension-based
+
+Platform-specific integration guides provided in docs/integration/AGENT_INTEGRATION_GUIDE.md
 
 ---
 
 ## Implementation Phases
 
-### Phase 0: Project Initialization (Week 1-2)
-**Duration**: 2 weeks
-**Team Size**: 2-3 engineers
-**Goal**: Set up development environment and foundational infrastructure
+### Phase 1: Plugin Framework & LLM Abstraction (Week 1)
+**Duration**: 1 week
+**Team Size**: 1-2 engineers
+**Goal**: Set up plugin structure and multi-provider LLM abstraction layer
 
 **Deliverables**:
-- Monorepo structure with Turborepo
-- Development environment setup
+- Project structure and development environment
+- LLM abstraction layer with unified interface
+- Provider implementations (Anthropic, OpenAI, Google)
+- Provider factory and configuration system
+- Local file system utilities (.prism/ directory structure)
+- YAML/JSON parsing and validation with Zod
+- Basic error handling and logging
+- Unit tests for core utilities
 - CI/CD pipeline (GitHub Actions)
-- Docker compose for local development
-- Documentation site structure
-- Project governance (ADRs, RFC process)
+- Development documentation
 
-### Phase 1: Core Infrastructure (Week 3-5)
-**Duration**: 3 weeks
-**Team Size**: 3-4 engineers
-**Goal**: Build foundational services and agent framework
+**Success Criteria**:
+- [ ] Can initialize .prism/ directory structure
+- [ ] Can switch between AI providers via .env configuration
+- [ ] LLM abstraction layer tested with all 3 providers
+- [ ] Cost estimation working for all providers
+- [ ] 90%+ test coverage on core utilities
 
-**Deliverables**:
-- Temporal cluster setup (dev + staging)
-- PostgreSQL + Redis + Neo4j deployment
-- Kafka cluster configuration
-- Agent framework SDK (@mt-prism/agent-sdk)
-- Authentication service (JWT + API keys)
-- Base MCP server interface
-- Observability stack (OTEL + Prometheus + Grafana)
-
-### Phase 2: MCP Integration Layer (Week 6-8)
-**Duration**: 3 weeks
-**Team Size**: 3-4 engineers
-**Goal**: Implement all external integrations
-
-**Deliverables**:
-- MCP Confluence Server (read/write PRDs)
-- MCP Figma Server (read designs, extract components)
-- MCP Jira Server (issue tracking)
-- MCP Git Server (code analysis)
-- MCP Slack Server (notifications)
-- MCP OpenAPI Generator
-- Integration test suite
-- API documentation
-
-### Phase 3: Core Agents Development (Week 9-12)
-**Duration**: 4 weeks
-**Team Size**: 5-6 engineers (parallel development)
-**Goal**: Implement all 7 agents with full functionality
+### Phase 2: Analysis Skills (Week 2)
+**Duration**: 1 week
+**Team Size**: 1-2 engineers
+**Goal**: Implement PRD and Figma analysis skills
 
 **Deliverables**:
 
-**Week 9-10**: Foundation Agents
-- Orchestrator Agent (workflow coordination)
-- PRD Analyzer Agent (requirement extraction)
-- Code Structure Analyzer Agent (codebase analysis)
+**PRD Analyzer Skill** (`prism.analyze-prd`):
+- Confluence integration via Atlassian MCP
+- Local file support (markdown, PDF via markitdown MCP)
+- Requirement extraction with LLM
+- Requirement classification and prioritization
+- Ambiguity detection
+- Dependency graph generation (Mermaid)
+- Output: requirements.yaml
+- Unit and integration tests
 
-**Week 11-12**: Validation Agents
-- UI/UX Analyzer Agent (Figma analysis)
-- Requirements Validator Agent (gap detection)
-- Clarification Manager Agent (stakeholder loop)
-- Technical Design Agent (TDD generation)
+**Figma Analyzer Skill** (`prism.analyze-figma`):
+- Figma integration via Figma MCP
+- Component extraction with variants
+- Design token extraction (colors, typography, spacing)
+- UI pattern recognition (forms, modals, tables)
+- Atomic design classification
+- Output: components.yaml
+- Integration tests with mock Figma data
 
-**All Agents Include**:
-- Unit tests (90%+ coverage)
-- Integration tests with MCPs
-- LangChain/LangGraph workflow
-- Error handling and retries
-- Monitoring and metrics
+**Common**:
+- Prompt templates for both skills
+- Structured output schemas (Zod)
+- Progress indicators and status updates
+- Error handling for API failures
 
-### Phase 4: CLI Development (Week 13-14)
-**Duration**: 2 weeks
-**Team Size**: 2 engineers
-**Goal**: Build production-ready CLI tool
+**Success Criteria**:
+- [ ] PRD analysis completes in < 2 min for 5-10 page document
+- [ ] 95%+ requirement extraction accuracy (manual verification on 3+ PRDs)
+- [ ] Figma analysis completes in < 3 min for 20-50 screens
+- [ ] All components and design tokens extracted correctly
+- [ ] Integration tests passing with mock data
 
-**Deliverables**:
-- oclif-based CLI framework
-- All commands implemented (orchestrate, prd, figma, validate, tdd)
-- Interactive prompts for configuration
-- Progress indicators and streaming output
-- Configuration management (.mt-prism/config.json)
-- Shell completions (bash, zsh, fish)
-- CLI documentation and help system
-
-### Phase 5: Frontend Development (Week 15-17)
-**Duration**: 3 weeks
-**Team Size**: 2-3 engineers
-**Goal**: Build web dashboard for workflow management
-
-**Deliverables**:
-- Next.js application with App Router
-- Authentication flow (Auth0 integration)
-- Workflow dashboard (list, status, details)
-- Requirement visualization (dependency graphs)
-- Clarification Q&A interface
-- TDD preview and export
-- Real-time updates (SSE/WebSocket)
-- Responsive design (mobile-friendly)
-
-### Phase 6: Testing, Hardening & Launch (Week 18-20)
-**Duration**: 3 weeks
-**Team Size**: Full team
-**Goal**: Production readiness and launch
+### Phase 3: Validation & Clarification Skills (Week 3)
+**Duration**: 1 week
+**Team Size**: 1-2 engineers
+**Goal**: Implement cross-validation and clarification management
 
 **Deliverables**:
-- End-to-end test suite
-- Load testing (10 concurrent workflows)
-- Security audit and penetration testing
-- Performance optimization
-- Production deployment (Kubernetes)
-- Disaster recovery procedures
-- User documentation and tutorials
-- Training materials for stakeholders
-- Beta pilot with 3-5 projects
-- Production launch
+
+**Requirements Validator Skill** (`prism.validate`):
+- Requirement-to-component mapping with confidence scoring
+- Gap detection (missing UI, missing requirements)
+- Inconsistency detection
+- Clarification question generation
+- Question prioritization and categorization
+- Output: gaps.yaml, questions.yaml
+- Unit and integration tests
+
+**Clarification Manager Skill** (`prism.clarify`):
+- Interactive Q&A mode (real-time console)
+- Jira integration via Atlassian MCP (ticket creation)
+- Slack integration via Slack MCP (channel posting)
+- File export mode (for manual distribution)
+- Response collection and parsing
+- Automatic requirement updates based on responses
+- Re-validation trigger
+- Session history tracking
+- Integration tests for all modes
+
+**Success Criteria**:
+- [ ] Validation completes in < 3 min
+- [ ] 90%+ gap detection rate (verified on sample data)
+- [ ] Specific, actionable questions generated for each gap
+- [ ] Interactive mode works smoothly with clear UX
+- [ ] Jira/Slack integrations functional (tested with test accounts)
+- [ ] Requirements correctly updated after clarification
+
+### Phase 4: TDD Generation & Full Workflow (Week 4)
+**Duration**: 1 week
+**Team Size**: 1-2 engineers
+**Goal**: Implement TDD generation and orchestrate full workflow
+
+**Deliverables**:
+
+**TDD Generator Skill** (`prism.generate-tdd`):
+- TDD template with 12 required sections
+- OpenAPI 3.1 specification generation
+- SQL database schema generation
+- TypeScript interface generation
+- Implementation task breakdown with estimates
+- Architecture diagram generation (Mermaid)
+- Architecture recommendation with rationale
+- Security considerations
+- Performance strategies
+- Output: TDD.md, api-spec.yaml, database-schema.sql, tasks.json
+- Validation of generated artifacts
+- Unit tests for generation logic
+
+**Full Workflow Skill** (`prism.discover`):
+- Orchestrate all 5 skills in sequence:
+  1. Analyze PRD → requirements.yaml
+  2. Analyze Figma → components.yaml
+  3. Validate → gaps.yaml, questions.yaml
+  4. Clarify (if gaps found) → Updated requirements
+  5. Generate TDD → Complete documentation
+- Workflow state management (session.json)
+- Checkpoint/resume capability
+- Progress tracking and reporting
+- End-to-end integration tests
+
+**Success Criteria**:
+- [ ] TDD generation completes in < 5 min
+- [ ] Generated OpenAPI spec is valid (validated by OpenAPI validator)
+- [ ] Generated SQL schema is executable (tested on SQLite/PostgreSQL)
+- [ ] Full workflow completes in < 20 min (excluding stakeholder response time)
+- [ ] Workflow can be interrupted and resumed
+- [ ] 4.5/5+ TDD quality rating (manual review of 3+ generated TDDs)
+
+### Phase 5: Polish, Documentation & Beta Launch (Week 5)
+**Duration**: 1 week (optional - can be done incrementally)
+**Team Size**: 1-2 engineers
+**Goal**: Production readiness and beta testing
+
+**Deliverables**:
+
+**Testing & Quality**:
+- End-to-end test suite with real PRDs and Figma files
+- Error scenario testing (API failures, invalid inputs, etc.)
+- Performance benchmarking
+- Security review (API key handling, data privacy)
+- Code coverage report (target: 80%+)
+
+**Documentation**:
+- User documentation (README.md, QUICKSTART.md)
+- LLM Provider setup guide (LLM_PROVIDER_GUIDE.md) ✅ Done
+- Platform integration guide (AGENT_INTEGRATION_GUIDE.md) ✅ Done
+- API/skill reference documentation
+- Troubleshooting guide
+- Example workflows and sample data
+
+**Platform Integration**:
+- Claude Code plugin installation guide
+- Cursor setup instructions
+- GitHub Copilot CLI configuration
+- Test on all 7 supported platforms
+
+**Beta Launch**:
+- Beta test with 5-10 users
+- Gather feedback and metrics
+- Fix critical bugs
+- Iterate based on feedback
+- Prepare for public release
+
+**Success Criteria**:
+- [ ] All integration tests passing
+- [ ] 80%+ code coverage
+- [ ] All documentation complete and reviewed
+- [ ] Successfully tested on 3+ platforms
+- [ ] 5+ beta users completed full workflow
+- [ ] 4.5/5+ user satisfaction from beta testers
+- [ ] No P0/P1 bugs remaining
 
 ---
 
@@ -200,93 +320,121 @@ This document outlines the comprehensive implementation plan for the MT-PRISM mu
 
 ### Core Technologies
 - **Language**: TypeScript 5.3+ (Node.js 20 LTS)
-- **Monorepo**: Turborepo + pnpm
-- **Orchestration**: Temporal.io
-- **Agent Framework**: LangChain + LangGraph
-- **Message Queue**: Apache Kafka
-- **Databases**: PostgreSQL 16, Redis 7, Neo4j 5
+- **Runtime**: Node.js 20 LTS (local development environment)
+- **Package Manager**: npm or pnpm
+- **Schema Validation**: Zod (for structured outputs)
+- **Data Format**: YAML for configs/outputs, JSON for session state
 
-### Application Layer
-- **API Framework**: Fastify + tRPC
-- **API Gateway**: Kong
-- **CLI**: oclif
-- **Frontend**: Next.js 15 (React 19)
-- **UI Components**: Shadcn/ui + Radix
+### AI Provider SDKs
+- **Anthropic**: @anthropic-ai/sdk ^0.27.0 (Claude Sonnet 4.5, Opus, Haiku)
+- **OpenAI**: openai ^4.0.0 (GPT-4, GPT-4 Turbo)
+- **Google**: @google/generative-ai ^0.1.0 (Gemini Pro, Ultra)
 
-### AI/ML
-- **Primary LLM**: Anthropic Claude (Sonnet 4.5)
-- **Secondary LLM**: OpenAI GPT-4 Turbo
-- **Vector DB**: Pinecone or Weaviate
-- **Code Analysis**: Tree-sitter
+### MCPs (Model Context Protocol)
+- **Atlassian MCP**: Confluence page fetching, Jira ticket creation
+- **Figma MCP**: Design file fetching, component extraction
+- **Slack MCP**: Channel posting, notifications (optional)
+- **Markitdown MCP**: PDF to markdown conversion
 
-### Infrastructure
-- **Container Orchestration**: Kubernetes 1.28+
-- **Service Mesh**: Istio
-- **CI/CD**: GitHub Actions
-- **Monitoring**: OpenTelemetry + Prometheus + Grafana + Loki
-- **Error Tracking**: Sentry
+### Development Tools
+- **Testing**: Vitest (fast, TypeScript-native)
+- **Linting**: ESLint + Prettier
+- **Type Checking**: TypeScript strict mode
+- **CI/CD**: GitHub Actions (automated testing and linting)
+- **Version Control**: Git with conventional commits
 
-### Security
-- **Authentication**: Auth0 or Keycloak
-- **Secrets Management**: HashiCorp Vault
-- **API Security**: JWT, rate limiting, input validation
+### Local Storage
+- **File System**: Native Node.js fs module
+- **Directory Structure**: .prism/ in project root
+- **Configuration**: .env for secrets, config.yaml for user preferences
+- **Session State**: session.json for workflow state and resume capability
+
+### Key Design Principles
+- ✅ **Zero Infrastructure**: No servers, databases, or containers
+- ✅ **Offline-Capable**: Works without internet (except MCP and AI API calls)
+- ✅ **Multi-Provider**: Switch between Claude, GPT-4, Gemini via config
+- ✅ **Multi-Platform**: Works with 7 AI coding assistants
+- ✅ **Local-First**: All data stored on developer's machine
+- ✅ **Simple Deployment**: git clone + npm install
 
 ---
 
 ## Development Practices
 
 ### Code Quality Standards
-- **Test Coverage**: Minimum 80% for all packages
+- **Test Coverage**: Minimum 80% for all skills and utilities
 - **Type Safety**: Strict TypeScript configuration
 - **Linting**: ESLint + Prettier (enforced via pre-commit hooks)
-- **Code Review**: All PRs require 2 approvals
-- **Conventional Commits**: Automated changelog generation
-- **Semantic Versioning**: Automated via Changesets
+- **Code Review**: PRs require review before merge (1 approval minimum)
+- **Conventional Commits**: feat:, fix:, docs:, test:, refactor:
+- **Branching Strategy**: See docs/strategy/MVP_AND_GIT_STRATEGY.md
+  - `main` - Production releases
+  - `develop` - Integration branch
+  - `feature/*` - Feature development
+  - `release/*` - Release preparation
+  - `hotfix/*` - Critical fixes
 
 ### Testing Strategy
-- **Unit Tests**: Vitest (fast, TypeScript-native)
-- **Integration Tests**: Test agent-to-agent communication
-- **Contract Tests**: Pact for MCP interfaces
-- **E2E Tests**: Playwright for full workflows
-- **Load Tests**: k6 for scalability verification
-- **Security Tests**: OWASP ZAP for vulnerability scanning
+- **Unit Tests**: Vitest for all skills and utilities
+- **Integration Tests**: Test MCP interactions with mock data
+- **E2E Tests**: Full workflow tests with real PRDs and Figma files
+- **Manual Testing**: Beta test with 5-10 users on real projects
+- **Performance Tests**: Benchmark against success criteria (< 2 min PRD, < 20 min full workflow)
+- **Security Review**: API key handling, data privacy, no secrets in logs
+
+**Target Coverage**: 80%+ code coverage on all skills and core utilities
 
 ### Documentation Requirements
-- **Code Documentation**: TSDoc for all public APIs
-- **Architecture Decision Records**: Document significant decisions
-- **API Documentation**: OpenAPI specs with examples
-- **User Guides**: Step-by-step tutorials
-- **Runbooks**: Operational procedures for incidents
+- **Code Documentation**: TSDoc for all public APIs and skill interfaces
+- **User Guides**: README.md, QUICKSTART.md with step-by-step instructions
+- **Setup Guides**: LLM provider config, platform integration for all 7 platforms
+- **API/Skill Reference**: Document all skill inputs, outputs, and options
+- **Troubleshooting**: Common errors and resolutions
+- **Examples**: Sample PRDs, Figma files, expected outputs
 
 ---
 
 ## Team Structure & Responsibilities
 
-### Core Team (9-12 engineers)
+### Core Team (1-2 engineers)
 
-**Backend Team (4-5 engineers)**
-- Lead: Infrastructure & Orchestration
-- 2 Engineers: Agent Development
-- 2 Engineers: MCP Integrations
+**Primary Engineer**:
+- Plugin architecture and LLM abstraction layer
+- All 5 skill implementations (PRD, Figma, Validation, Clarification, TDD)
+- MCP integrations (Confluence, Figma, Jira, Slack)
+- Testing and quality assurance
+- Documentation (user guides, API reference)
 
-**Frontend Team (2-3 engineers)**
-- Lead: Next.js Architecture
-- 1-2 Engineers: UI Components & Features
+**Secondary Engineer (optional - can join Week 2+)**:
+- Parallel skill development
+- Integration testing
+- Platform-specific testing (7 platforms)
+- Example creation and beta support
+- Documentation review and improvements
 
-**DevOps/SRE (2 engineers)**
-- Lead: Infrastructure & Kubernetes
-- 1 Engineer: Monitoring & Observability
+### Extended Team (part-time/advisory)
 
-**QA/Testing (1-2 engineers)**
-- Lead: Test Strategy & Automation
-- 1 Engineer: Manual Testing & Bug Triage
+**Product Owner/Stakeholder**:
+- Requirements validation
+- Beta testing coordination
+- User feedback collection
+- Priority decisions
 
-### Extended Team
+**Technical Reviewer** (optional):
+- Code review
+- Architecture decisions
+- Security review
 
-**Product Manager**: Requirements, roadmap, stakeholder communication
-**UX Designer**: Dashboard design, user flows
-**Technical Writer**: Documentation
-**Security Engineer**: Security audit, compliance
+### Why Such a Small Team?
+
+The plugin approach eliminates infrastructure complexity:
+- ❌ No DevOps team needed (no Kubernetes, no databases)
+- ❌ No frontend team needed (uses AI assistant UI)
+- ❌ No distributed systems complexity
+- ❌ No service mesh, API gateway, or monitoring stack
+- ✅ Simple TypeScript codebase
+- ✅ Local file system storage
+- ✅ Direct AI provider SDK usage
 
 ---
 
@@ -295,202 +443,413 @@ This document outlines the comprehensive implementation plan for the MT-PRISM mu
 ### High-Priority Risks
 
 **1. LLM API Reliability**
-- **Risk**: Claude/OpenAI API downtime or rate limits
-- **Mitigation**: Multi-provider fallback, local caching, circuit breakers
+- **Risk**: Claude/OpenAI/Gemini API downtime or rate limits
+- **Likelihood**: Medium (APIs generally reliable but outages happen)
+- **Impact**: High (blocks workflow execution)
+- **Mitigation**:
+  - Multi-provider support (switch providers via config)
+  - Retry with exponential backoff
+  - Clear error messages with provider status links
+  - Optional local caching for repeated operations
 
 **2. Requirement Extraction Accuracy**
-- **Risk**: AI misinterprets PRD requirements
-- **Mitigation**: Human-in-the-loop validation, confidence scoring, extensive testing
+- **Risk**: AI misinterprets PRD requirements or misses key information
+- **Likelihood**: Medium (LLMs are powerful but not perfect)
+- **Impact**: High (incorrect requirements lead to bad TDDs)
+- **Mitigation**:
+  - Extensive prompt engineering and testing
+  - Human-in-the-loop validation via clarification workflow
+  - Confidence scoring for extracted requirements
+  - Manual review checkpoints
+  - Beta testing with real PRDs
 
-**3. External API Dependencies**
-- **Risk**: Confluence/Figma API changes or outages
-- **Mitigation**: API versioning, adapter pattern, comprehensive error handling
-
-**4. Workflow State Consistency**
-- **Risk**: Distributed state corruption during failures
-- **Mitigation**: Temporal's durable execution, event sourcing, saga pattern
-
-**5. Scalability Under Load**
-- **Risk**: System bottlenecks with multiple concurrent workflows
-- **Mitigation**: Horizontal scaling, load testing, resource quotas
+**3. External MCP Dependencies**
+- **Risk**: Confluence/Figma MCP changes or authentication issues
+- **Likelihood**: Low-Medium (MCPs are standardized but can have breaking changes)
+- **Impact**: Medium (can fall back to local files for PRD)
+- **Mitigation**:
+  - Support for local file fallbacks (markdown, PDF)
+  - MCP abstraction layer for easy updates
+  - Comprehensive error handling with actionable messages
+  - Test with mock MCP data
 
 ### Medium-Priority Risks
 
-**6. Integration Complexity**
-- **Risk**: Difficulty integrating 6+ external services
-- **Mitigation**: Phased integration, comprehensive testing, MCP abstraction layer
+**4. Platform Compatibility**
+- **Risk**: Plugin doesn't work correctly on all 7 AI coding platforms
+- **Likelihood**: Medium (platforms have different capabilities)
+- **Impact**: Medium (limits user base)
+- **Mitigation**:
+  - Test on at least 3 platforms during development
+  - Platform-specific integration guides
+  - Community feedback and bug reports
+  - Graceful degradation for unsupported features
 
-**7. Agent Coordination**
-- **Risk**: Deadlocks or race conditions between agents
-- **Mitigation**: Temporal workflow guarantees, clear state machine design
+**5. Performance at Scale**
+- **Risk**: Slow performance on large PRDs (50+ pages) or Figma files (100+ screens)
+- **Likelihood**: Medium (LLM calls are slow for large inputs)
+- **Impact**: Low-Medium (users can break into smaller chunks)
+- **Mitigation**:
+  - Streaming progress updates to keep user informed
+  - Chunking strategy for large documents
+  - Performance benchmarking during development
+  - Clear guidance on optimal document sizes
 
-**8. Data Privacy & Security**
-- **Risk**: Exposure of sensitive PRD/code data
-- **Mitigation**: Encryption at rest/transit, audit logging, access controls
+**6. Data Privacy & Security**
+- **Risk**: Exposure of sensitive PRD/design data to AI providers
+- **Likelihood**: Low (users control what data is sent)
+- **Impact**: High (potential IP/confidentiality breach)
+- **Mitigation**:
+  - Clear documentation about data flows
+  - No data stored on our servers (local-first)
+  - Users control which AI provider they use
+  - Option to redact sensitive info before processing
+  - API keys stored in .env (gitignored)
+
+### Low-Priority Risks
+
+**7. Cost Overruns**
+- **Risk**: AI API costs exceed budget
+- **Likelihood**: Low (workflows predictable, < $5 per run)
+- **Impact**: Low (users pay their own API costs)
+- **Mitigation**:
+  - Cost estimation before each workflow
+  - Option to choose cheaper providers (Gemini)
+  - Clear documentation of typical costs
+  - No surprise infrastructure costs (zero infra)
+
+**8. Limited Concurrent Workflows**
+- **Risk**: Plugin only handles 1 workflow at a time
+- **Likelihood**: High (designed for single-user local execution)
+- **Impact**: Low (most users run 1-2 workflows per day)
+- **Mitigation**:
+  - Session state management allows resume if interrupted
+  - Fast execution (< 20 min) reduces blocking
+  - Clear documentation that this is for individual/small team use
+  - Migration path to full system if volume grows
 
 ---
 
 ## Budget Estimation
 
-### Development Costs (16-20 weeks)
+### Development Costs (4-5 weeks)
 
-**Personnel** (assuming blended rate of $150/hr):
-- Backend: 4.5 engineers × 20 weeks × 40 hrs = 3,600 hours → $540,000
-- Frontend: 2.5 engineers × 20 weeks × 40 hrs = 2,000 hours → $300,000
-- DevOps: 2 engineers × 20 weeks × 40 hrs = 1,600 hours → $240,000
-- QA: 1.5 engineers × 20 weeks × 40 hrs = 1,200 hours → $180,000
-- **Total Personnel**: ~$1,260,000
+**Personnel** (assuming rate of $150/hr):
+- Primary Engineer: 1 × 5 weeks × 40 hrs = 200 hours → $30,000
+- Secondary Engineer: 0.5 × 4 weeks × 40 hrs = 80 hours → $12,000
+- Technical Reviewer: 0.1 × 5 weeks × 40 hrs = 20 hours → $3,000
+- Product Owner: 0.1 × 5 weeks × 40 hrs = 20 hours → $3,000
+- **Total Personnel**: ~$48,000
 
-### Infrastructure Costs (Annual Estimates)
+**Tools & Services**:
+- GitHub Actions (CI/CD): Free for open source
+- Development tools: $0 (use existing tools)
+- **Total Tools**: $0
 
-**Cloud Services** (AWS/GCP):
-- Kubernetes cluster (3 nodes): ~$500/month
-- PostgreSQL managed instance: ~$300/month
-- Redis cluster: ~$200/month
-- Neo4j managed instance: ~$400/month
-- Kafka cluster: ~$600/month
-- Load balancers & networking: ~$200/month
-- **Subtotal**: ~$2,200/month → **$26,400/year**
+**Testing & QA**:
+- Beta tester compensation/incentives: $2,000
+- Sample data creation: $1,000
+- **Total Testing**: $3,000
 
-**Third-Party Services**:
-- Temporal Cloud: ~$500/month
-- Auth0/Keycloak: ~$300/month
-- Monitoring (Grafana Cloud): ~$200/month
-- Sentry: ~$100/month
-- **Subtotal**: ~$1,100/month → **$13,200/year**
+**Documentation**:
+- Technical writing (included in engineer time)
+- Example projects: $1,000
+- **Total Documentation**: $1,000
 
-**AI/LLM API Costs** (estimated for 100 workflows/month):
-- Claude API: ~$1,000/month
-- OpenAI API: ~$500/month (fallback)
-- Pinecone/Weaviate: ~$300/month
-- **Subtotal**: ~$1,800/month → **$21,600/year**
+### Total Development Cost: **~$52,000**
 
-**Total Infrastructure**: **~$61,200/year**
+### Infrastructure Costs
 
-### Total Project Cost
-- **Development**: ~$1,260,000 (one-time)
-- **Year 1 Infrastructure**: ~$61,200
-- **Total**: **~$1,321,200**
+**Year 1 (Development + First 100 workflows)**:
+- Cloud services: **$0** (runs locally on user's machine)
+- Databases: **$0** (local file system)
+- Monitoring: **$0** (local logs)
+- AI API costs: ~$6,000 (100 workflows × ~$4 × 1.5 for testing)
+- **Total Year 1 Infrastructure**: **~$6,000**
 
-### Ongoing Annual Costs (post-launch)
-- **Maintenance Team**: 2-3 engineers (~$400,000/year)
-- **Infrastructure**: ~$61,200/year
-- **Total Annual**: **~$461,200/year**
+### Year 1 Total Project Cost
+- **Development**: ~$52,000 (one-time)
+- **Infrastructure**: ~$6,000 (for testing and initial usage)
+- **Year 1 Total**: **~$58,000**
+
+### Ongoing Annual Costs (Year 2+)
+
+**Maintenance & Support**:
+- Part-time engineer (20% time): ~$30,000/year
+- Bug fixes, updates, platform compatibility
+- Documentation updates
+
+**Infrastructure**:
+- Hosting: $0 (users run locally)
+- Databases: $0 (local storage)
+- AI API costs: $0 (users pay their own API costs)
+- **Total Infrastructure**: $0
+
+**Total Ongoing**: **~$30,000/year**
+
+---
+
+### Cost Comparison: Plugin vs Full System
+
+| Cost Category | Plugin (Local-First) | Full System (Distributed) | Savings |
+|---------------|---------------------|---------------------------|---------|
+| **Development** | $52,000 | $1,260,000 | **$1,208,000** |
+| **Year 1 Infrastructure** | $6,000 | $61,200 | **$55,200** |
+| **Year 1 Total** | **$58,000** | **$1,321,200** | **$1,263,200 (96% savings)** |
+| **Ongoing Annual** | $30,000 | $461,200 | **$431,200** |
+| **5-Year Total** | **$178,000** | **$3,166,000** | **$2,988,000 (94% savings)** |
+
+### ROI Analysis
+
+**Break-even**: If MT-PRISM saves just **5 hours of engineering time per workflow** at $150/hr, it pays for itself in:
+- Cost per workflow: ~$4 (AI API)
+- Value per workflow: 5 hrs × $150/hr = $750 saved
+- Break-even: $58,000 ÷ $750 ≈ **77 workflows**
+- At 100 workflows/year: **Pays for itself in < 1 year**
+
+**Time Savings**: Manual PRD-to-TDD typically takes 2-3 days (16-24 hours). MT-PRISM does it in < 20 minutes. That's a **~90% time reduction**.
 
 ---
 
 ## Success Criteria & KPIs
 
-### Phase 0-1: Foundation
-- [ ] All infrastructure deployed and accessible
+### Phase 1: Plugin Framework (Week 1)
+- [ ] .prism/ directory structure created and working
+- [ ] LLM abstraction layer functional for all 3 providers
+- [ ] Can switch providers via .env configuration
+- [ ] Cost estimation accurate within 10%
+- [ ] 90%+ test coverage on core utilities
 - [ ] CI/CD pipeline running successfully
-- [ ] Agent framework SDK published
-- [ ] 100% test coverage on core libraries
 
-### Phase 2: Integration
-- [ ] All MCP servers functional with 95%+ uptime
-- [ ] API documentation complete
-- [ ] Integration test suite passing (100%)
-- [ ] < 100ms average MCP response time
+### Phase 2: Analysis Skills (Week 2)
+- [ ] PRD analysis completes in < 2 min for typical documents
+- [ ] 95%+ requirement extraction accuracy (verified on 3+ real PRDs)
+- [ ] Figma analysis completes in < 3 min for typical files
+- [ ] All design tokens and components extracted correctly
+- [ ] Integration tests passing with mock data
+- [ ] Error handling working for common failures
 
-### Phase 3: Agents
-- [ ] All 7 agents deployed and operational
-- [ ] 90%+ unit test coverage per agent
-- [ ] Workflow end-to-end tests passing
-- [ ] Agent coordination working without deadlocks
+### Phase 3: Validation & Clarification (Week 3)
+- [ ] Validation completes in < 3 min
+- [ ] 90%+ gap detection rate (verified on sample data)
+- [ ] Specific, actionable questions generated for gaps
+- [ ] Interactive clarification mode working smoothly
+- [ ] Jira integration functional (tested)
+- [ ] Slack integration functional (tested)
+- [ ] Requirements correctly updated after clarification
 
-### Phase 4-5: User Interfaces
-- [ ] CLI available on npm with full documentation
-- [ ] Web dashboard accessible and responsive
-- [ ] User acceptance testing complete (5+ testers)
-- [ ] < 2 second page load time
+### Phase 4: TDD & Full Workflow (Week 4)
+- [ ] TDD generation completes in < 5 min
+- [ ] Generated OpenAPI spec is valid (passes validator)
+- [ ] Generated SQL schema is executable
+- [ ] Full workflow completes in < 20 min
+- [ ] Workflow can be interrupted and resumed
+- [ ] 4.5/5+ TDD quality rating (manual review of 3+ TDDs)
 
-### Phase 6: Launch
-- [ ] 3+ pilot projects completed successfully
-- [ ] Security audit passed with no critical issues
-- [ ] Load testing: 10 concurrent workflows sustained
-- [ ] Production deployment successful
-- [ ] Documentation and training materials complete
+### Phase 5: Launch Readiness (Week 5)
+- [ ] All integration tests passing (100%)
+- [ ] 80%+ code coverage achieved
+- [ ] All documentation complete and reviewed
+- [ ] Successfully tested on 3+ platforms
+- [ ] 5+ beta users completed full workflow
+- [ ] 4.5/5+ user satisfaction from beta testers
+- [ ] No P0/P1 bugs remaining
+- [ ] Security review completed
 
 ### Post-Launch Metrics (First 3 Months)
-- **Adoption**: 10+ active projects using the system
-- **Automation Rate**: 80%+ of workflow automated
-- **Accuracy**: 95%+ requirement extraction accuracy
-- **Performance**: < 5 min initial PRD analysis
-- **Reliability**: 99% uptime
-- **User Satisfaction**: 4.5/5 average rating
+
+**Adoption**:
+- 20+ active users
+- 50+ workflows completed
+- 3+ supported platforms actively used
+
+**Performance**:
+- < 2 min PRD analysis (P95)
+- < 20 min full workflow (P95)
+- < 5 min TDD generation (P95)
+
+**Quality**:
+- 95%+ requirement extraction accuracy
+- 90%+ gap detection rate
+- 4.5/5+ average TDD quality rating
+- 4.5/5+ average user satisfaction
+
+**Reliability**:
+- < 5% workflow failure rate (excluding user errors)
+- < 24 hour bug fix turnaround for P0 issues
+- < 1 week for P1 issues
+
+**Cost Efficiency**:
+- $2.50 - $4.00 per workflow (AI API costs)
+- < $10/month ongoing maintenance per user
+- Zero infrastructure costs
 
 ---
 
 ## Next Steps
 
-### Immediate Actions (Week 1)
-1. **Project Kickoff Meeting**
-   - Review implementation plan with team
-   - Assign roles and responsibilities
-   - Set up communication channels (Slack, Jira)
+### Immediate Actions (Week 1 - Day 1-2)
 
-2. **Environment Setup**
-   - Provision development infrastructure
-   - Set up GitHub repository and branch protection
-   - Configure CI/CD pipeline
-   - Obtain API access tokens (Confluence, Figma, etc.)
+1. **Environment Setup**
+   - Create GitHub repository with branch protection
+   - Set up project structure (TypeScript, Vitest, ESLint, Prettier)
+   - Configure CI/CD pipeline (GitHub Actions)
+   - Create .env.example with all required variables
+   - Initialize .prism/ directory structure
 
-3. **Monorepo Initialization**
-   - Create Turborepo structure
-   - Configure TypeScript and build tools
-   - Set up testing framework
-   - Initialize documentation site
+2. **LLM Provider Research**
+   - Review latest API documentation for Anthropic, OpenAI, Google
+   - Test API access with sample calls
+   - Benchmark performance and cost
+   - Design unified abstraction interface
 
-4. **Technical Spike Week**
-   - Temporal proof-of-concept
-   - LangChain agent prototype
-   - MCP interface design
-   - Performance benchmarking
+3. **MCP Investigation**
+   - Test Atlassian MCP (Confluence, Jira)
+   - Test Figma MCP
+   - Test Slack MCP (optional)
+   - Document setup process and auth requirements
 
-5. **Documentation**
-   - Complete Architecture Decision Records (ADRs)
-   - Define API contracts
-   - Create developer onboarding guide
+4. **Documentation Foundation**
+   - Update README.md with project overview
+   - Create QUICKSTART.md draft
+   - Set up docs/ folder structure
+   - Begin platform integration guide
+
+### Weekly Plan
+
+**Week 1**: Plugin Framework & LLM Abstraction
+- Days 1-2: Environment setup, research
+- Days 3-4: LLM abstraction layer implementation
+- Day 5: Testing and documentation
+
+**Week 2**: Analysis Skills
+- Days 1-2: PRD Analyzer skill
+- Days 3-4: Figma Analyzer skill
+- Day 5: Integration tests and documentation
+
+**Week 3**: Validation & Clarification
+- Days 1-2: Requirements Validator skill
+- Days 3-4: Clarification Manager skill
+- Day 5: Integration tests and documentation
+
+**Week 4**: TDD & Full Workflow
+- Days 1-2: TDD Generator skill
+- Days 3-4: Full workflow orchestration
+- Day 5: End-to-end tests
+
+**Week 5**: Polish & Launch
+- Days 1-2: Bug fixes, performance optimization
+- Days 3-4: Documentation completion, platform testing
+- Day 5: Beta launch preparation
+
+### Daily Workflow
+- **Morning**: Review previous day's work, plan today's tasks
+- **Mid-day**: Development work, implement features
+- **Afternoon**: Testing, documentation, commit & push
+- **End of day**: Update progress, identify blockers
 
 ### Weekly Checkpoints
-- **Monday**: Sprint planning, task assignment
-- **Wednesday**: Mid-week sync, blocker resolution
-- **Friday**: Sprint demo, retrospective, metrics review
-
-### Monthly Reviews
-- Review progress against plan
-- Adjust timeline and resources as needed
-- Stakeholder demonstration and feedback
-- Update risk register
+- **End of each week**: Demo progress, review success criteria
+- **Adjust as needed**: Scope, priorities, timeline
 
 ---
 
 ## Appendices
 
 ### A. References
-- [Temporal Documentation](https://docs.temporal.io)
-- [LangChain Documentation](https://docs.langchain.com)
+
+**AI Provider Documentation**:
 - [Anthropic Claude API](https://docs.anthropic.com)
+- [OpenAI API](https://platform.openai.com/docs)
+- [Google Gemini API](https://ai.google.dev/docs)
+
+**MCP Documentation**:
 - [Model Context Protocol](https://modelcontextprotocol.io)
+- [Atlassian MCP](https://github.com/modelcontextprotocol/servers/tree/main/atlassian)
+- [Figma MCP](https://github.com/modelcontextprotocol/servers/tree/main/figma)
+
+**Platform Documentation**:
+- [Claude Code](https://www.anthropic.com/claude-code)
+- [Cursor](https://cursor.sh)
+- [GitHub Copilot CLI](https://githubnext.com/projects/copilot-cli)
+
+**Development Tools**:
+- [TypeScript](https://www.typescriptlang.org)
+- [Vitest](https://vitest.dev)
+- [Zod](https://zod.dev)
 
 ### B. Related Documents
-- [Technical Specifications](./TECHNICAL_SPECS.md)
-- [Phase Breakdown](./PHASES.md)
-- [Risk Assessment](./RISKS.md)
-- [Architecture Decision Records](../adrs/)
+
+**Strategy & Architecture**:
+- [APPROACH_COMPARISON.md](./APPROACH_COMPARISON.md) - Why plugin over full system
+- [docs/strategy/LOCAL_FIRST_STRATEGY.md](../strategy/LOCAL_FIRST_STRATEGY.md) - Zero-infrastructure architecture
+- [docs/strategy/MVP_AND_GIT_STRATEGY.md](../strategy/MVP_AND_GIT_STRATEGY.md) - Git workflow and MVP approach
+
+**Integration & Setup**:
+- [docs/integration/LLM_PROVIDER_GUIDE.md](../integration/LLM_PROVIDER_GUIDE.md) - Multi-provider configuration
+- [docs/integration/AGENT_INTEGRATION_GUIDE.md](../integration/AGENT_INTEGRATION_GUIDE.md) - Platform-specific setup
+- [docs/integration/MULTI_PROVIDER_MIGRATION.md](../integration/MULTI_PROVIDER_MIGRATION.md) - Migration guide
+
+**Specifications**:
+- [specs/001-prism-plugin/spec.md](../../specs/001-prism-plugin/spec.md) - Feature specification
+- [AI_AGENT.md](../../AI_AGENT.md) - AI assistant guidance
 
 ### C. Glossary
+
+**Project Terms**:
 - **PRD**: Product Requirements Document
 - **TDD**: Technical Design Document
-- **MCP**: Model Context Protocol
-- **ADR**: Architecture Decision Record
-- **AST**: Abstract Syntax Tree
-- **OTEL**: OpenTelemetry
-- **SSE**: Server-Sent Events
+- **MCP**: Model Context Protocol - standardized way for AI tools to access external data
+- **Skill**: Individual capability/module in MT-PRISM (e.g., `prism.analyze-prd`)
+- **Workflow**: End-to-end execution of multiple skills in sequence
+
+**Technical Terms**:
+- **LLM**: Large Language Model (Claude, GPT-4, Gemini)
+- **Zod**: TypeScript-first schema validation library
+- **Local-First**: Architecture that runs on user's machine with zero cloud infrastructure
+- **Confluence**: Atlassian's document collaboration tool (common for PRDs)
+- **Figma**: Design tool for UI/UX (common for mockups)
+
+**Workflow Stages**:
+- **Analysis**: Extract structured data from unstructured documents
+- **Validation**: Cross-check requirements vs designs, identify gaps
+- **Clarification**: Interactive Q&A to resolve ambiguities
+- **Generation**: Create comprehensive TDD with API specs and schemas
+
+### D. Migration Path to Full System
+
+If the plugin proves successful but needs to scale beyond its capabilities, here's the migration path:
+
+**Reusable Components (70-80%)**:
+- All prompts and prompt engineering
+- Skill logic and workflows
+- Templates and schemas
+- MCP integrations
+- LLM abstraction layer
+
+**New Components Needed**:
+- Temporal orchestration for distributed workflows
+- API layer for external access
+- Web dashboard (Next.js)
+- Database layer (PostgreSQL, Redis)
+- Monitoring and observability
+
+**Estimated Migration Effort**: 12-16 weeks (vs 20 weeks greenfield)
+
+**Cost**: ~$900K (30% savings due to reusable components)
+
+See [APPROACH_COMPARISON.md](./APPROACH_COMPARISON.md) for detailed analysis.
 
 ---
 
+## Document History
+
+| Version | Date | Changes | Author |
+|---------|------|---------|--------|
+| 1.0 | 2025-11-05 | Initial version - Full distributed system | Engineering Team |
+| 2.0 | 2025-11-20 | Complete rewrite - Local-first plugin approach | Engineering Team |
+
 **Document Owner**: Engineering Leadership
-**Last Updated**: 2025-11-05
-**Next Review**: 2025-11-12
+**Current Version**: 2.0
+**Last Updated**: 2025-11-20
+**Next Review**: 2025-12-04 (after Phase 1 completion)
