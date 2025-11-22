@@ -6,9 +6,11 @@
 #
 # Note: Use 'bash' not 'sh' - script requires bash features
 
-# Re-exec with bash if running under sh
+# Ensure running under bash
 if [ -z "$BASH_VERSION" ]; then
-  exec bash "$0" "$@"
+  echo "Error: This script requires bash. Please run with:" >&2
+  echo "  curl -fsSL https://raw.githubusercontent.com/mt-osiris-tools/mt-prism/main/install.sh | bash" >&2
+  exit 1
 fi
 
 set -euo pipefail
