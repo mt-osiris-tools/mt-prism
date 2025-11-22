@@ -38,13 +38,28 @@ download_release() {
     return 3
   fi
 
-  if ! curl -fL --progress-bar "$download_url" -o "$output_path"; then
-    echo "❌ Download failed" >&2
-    return 3
-  fi
+  # Retry logic: 3 attempts with exponential backoff
+  local attempt=1
+  local max_attempts=3
+  local wait_time=2
 
-  echo "✓ Download complete"
-  return 0
+  while [ $attempt -le $max_attempts ]; do
+    if curl -fL --progress-bar "$download_url" -o "$output_path"; then
+      echo "✓ Download complete"
+      return 0
+    fi
+
+    if [ $attempt -lt $max_attempts ]; then
+      echo "⚠️  Download failed (attempt $attempt/$max_attempts), retrying in ${wait_time}s..." >&2
+      sleep $wait_time
+      wait_time=$((wait_time * 2))
+    fi
+
+    attempt=$((attempt + 1))
+  done
+
+  echo "❌ Download failed after $max_attempts attempts" >&2
+  return 3
 }
 
 download_checksum() {
