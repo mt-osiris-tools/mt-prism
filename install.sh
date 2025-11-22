@@ -13,6 +13,7 @@ INSTALLER_VERSION="1.0.0"
 INSTALL_DIR="${HOME}/.mt-prism"
 BIN_DIR="${INSTALL_DIR}/bin"
 GITHUB_REPO="mt-osiris-tools/mt-prism"
+GITHUB_API="https://api.github.com/repos/${GITHUB_REPO}"
 TEMP_DIR=""
 TARGET_VERSION=""
 
@@ -27,7 +28,6 @@ NC='\033[0m' # No Color
 cleanup() {
   local exit_code=$?
   if [ -n "$TEMP_DIR" ] && [ -d "$TEMP_DIR" ]; then
-    echo "🧹 Cleaning up temporary files..."
     rm -rf "$TEMP_DIR"
   fi
 
@@ -49,6 +49,207 @@ log_success() { echo -e "${GREEN}✓${NC} $*"; }
 log_error() { echo -e "${RED}❌${NC} $*" >&2; }
 log_step() { echo -e "${BLUE}▶${NC}  $*"; }
 
+# Detect platform
+detect_platform() {
+  local os arch
+
+  case "$(uname -s)" in
+    Darwin*) os="darwin" ;;
+    Linux*) os="linux" ;;
+    MINGW*|MSYS*|CYGWIN*) os="windows" ;;
+    *)
+      log_error "Unsupported OS: $(uname -s)"
+      exit 1
+      ;;
+  esac
+
+  case "$(uname -m)" in
+    x86_64|amd64) arch="x64" ;;
+    arm64|aarch64) arch="arm64" ;;
+    *)
+      log_error "Unsupported architecture: $(uname -m)"
+      exit 1
+      ;;
+  esac
+
+  echo "${os}-${arch}"
+}
+
+# Verify prerequisites
+verify_prerequisites() {
+  log_step "Verifying prerequisites..."
+
+  if ! command -v node &> /dev/null; then
+    log_error "Node.js not found"
+    echo ""
+    echo "MT-PRISM requires Node.js 20 or higher."
+    echo ""
+    echo "📥 Install Node.js:"
+    echo "   macOS: brew install node"
+    echo "   Linux: https://nodejs.org/en/download/"
+    exit 2
+  fi
+
+  local node_version
+  node_version=$(node --version | sed 's/v//')
+  local major_version
+  major_version=$(echo "$node_version" | cut -d. -f1)
+
+  if [ "$major_version" -lt 20 ]; then
+    log_error "Node.js $node_version found, but 20+ required"
+    exit 2
+  fi
+
+  log_success "Node.js $node_version found"
+}
+
+# Get latest version from GitHub
+get_latest_version() {
+  curl -fsSL "${GITHUB_API}/releases/latest" | \
+    grep '"tag_name":' | \
+    sed -E 's/.*"tag_name": "v?([^"]+)".*/\1/'
+}
+
+# Download and extract release
+download_and_extract() {
+  local version="$1"
+  local platform="$2"
+
+  log_step "Downloading MT-PRISM v${version}..."
+
+  # Get download URL
+  local download_url
+  download_url=$(curl -fsSL "${GITHUB_API}/releases/tags/v${version}" | \
+    grep "browser_download_url.*tar.gz\"" | \
+    grep -v ".sha256" | \
+    sed -E 's/.*"browser_download_url": "([^"]+)".*/\1/' | \
+    head -n 1)
+
+  if [ -z "$download_url" ]; then
+    log_error "Could not find download for version ${version}"
+    exit 3
+  fi
+
+  # Download tarball
+  local tarball="${TEMP_DIR}/mt-prism.tar.gz"
+  if ! curl -fL --progress-bar "$download_url" -o "$tarball"; then
+    log_error "Download failed"
+    exit 3
+  fi
+
+  log_success "Download complete"
+
+  # Extract
+  log_step "Extracting..."
+  tar -xzf "$tarball" -C "$TEMP_DIR"
+
+  log_success "Extraction complete"
+}
+
+# Install dependencies
+install_dependencies() {
+  log_step "Installing dependencies..."
+
+  cd "$INSTALL_DIR"
+  if ! npm install --production --silent > /dev/null 2>&1; then
+    log_error "npm install failed"
+    exit 5
+  fi
+
+  log_success "Dependencies installed"
+}
+
+# Configure PATH
+configure_path() {
+  log_step "Configuring PATH..."
+
+  local shell_profile
+  case "$(basename "$SHELL")" in
+    bash) shell_profile="${HOME}/.bashrc" ;;
+    zsh) shell_profile="${HOME}/.zshrc" ;;
+    *)
+      log_info "Unknown shell, PATH not auto-configured"
+      echo "Add to PATH manually: export PATH=\"${BIN_DIR}:\$PATH\""
+      return 0
+      ;;
+  esac
+
+  # Check if already in PATH
+  if grep -q "mt-prism/bin" "$shell_profile" 2>/dev/null; then
+    log_success "PATH already configured"
+    return 0
+  fi
+
+  # Add to shell profile
+  echo "" >> "$shell_profile"
+  echo "# MT-PRISM" >> "$shell_profile"
+  echo "export PATH=\"${BIN_DIR}:\$PATH\"" >> "$shell_profile"
+
+  log_success "PATH configured in $shell_profile"
+}
+
+# Verify installation
+verify_installation() {
+  log_step "Verifying installation..."
+
+  if ! "${INSTALL_DIR}/node_modules/.bin/prism" --version > /dev/null 2>&1; then
+    log_error "Installation verification failed"
+    exit 5
+  fi
+
+  log_success "Installation verified"
+}
+
+# Create installation manifest
+create_installation_manifest() {
+  local version="$1"
+  local platform="$2"
+
+  local manifest="${INSTALL_DIR}/install.json"
+  local node_version
+  node_version=$(node --version | sed 's/v//')
+
+  cat > "$manifest" <<EOF
+{
+  "version": "${version}",
+  "install_path": "${INSTALL_DIR}",
+  "installed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "node_version": "${node_version}",
+  "platform": "${platform}",
+  "install_method": "curl"
+}
+EOF
+
+  log_success "Installation manifest created"
+}
+
+# Show success message
+show_success_message() {
+  local version="$1"
+
+  echo ""
+  echo "╔═══════════════════════════════════════════════════════════╗"
+  echo "║          ✅ MT-PRISM v${version} Installed Successfully!           ║"
+  echo "╚═══════════════════════════════════════════════════════════╝"
+  echo ""
+  echo "📁 Installed to: ${INSTALL_DIR}"
+  echo "📝 Configuration: ${INSTALL_DIR}/.env (copy from .env.example)"
+  echo ""
+  echo "Next steps:"
+  echo "1. Restart your shell or run: source ~/.$(basename "$SHELL")rc"
+  echo "2. Add your API key to .env:"
+  echo "   cd ${INSTALL_DIR}"
+  echo "   cp .env.example .env"
+  echo "   # Edit .env and add ANTHROPIC_API_KEY=your-key"
+  echo ""
+  echo "3. Start using MT-PRISM:"
+  echo "   prism --prd=./docs/requirements.md --project=\"My App\""
+  echo ""
+  echo "For help: prism --help"
+  echo "Documentation: https://github.com/${GITHUB_REPO}"
+  echo ""
+}
+
 # Main installation function
 main() {
   echo ""
@@ -60,16 +261,61 @@ main() {
   # Create temp directory
   TEMP_DIR=$(mktemp -d)
 
-  log_info "Installation directory: ${INSTALL_DIR}"
-  log_info "Temporary directory: ${TEMP_DIR}"
+  # Detect platform
+  local platform
+  platform=$(detect_platform)
+  log_success "Platform detected: $platform"
+
+  # Verify prerequisites
+  verify_prerequisites
+
+  # Determine version
+  local version="${TARGET_VERSION}"
+  if [ -z "$version" ]; then
+    log_step "Fetching latest version..."
+    version=$(get_latest_version)
+  fi
+  log_info "Installing version: $version"
   echo ""
 
-  # Installation steps (to be implemented in Phase 3)
-  log_step "Phase 2 foundational utilities complete"
-  log_step "Phase 3 implementation (US1) coming next"
+  # Download and extract
+  download_and_extract "$version" "$platform"
 
-  echo ""
-  log_success "Phase 2 setup complete!"
+  # Move to installation directory
+  log_step "Installing to ${INSTALL_DIR}..."
+  mkdir -p "$INSTALL_DIR"
+
+  # Find extracted directory
+  local extracted_dir
+  extracted_dir=$(find "$TEMP_DIR" -maxdepth 1 -type d -name "mt-prism-*" | head -n 1)
+
+  if [ -z "$extracted_dir" ]; then
+    # Fallback: files might be extracted directly
+    cp -r "$TEMP_DIR"/* "$INSTALL_DIR"/
+  else
+    cp -r "$extracted_dir"/* "$INSTALL_DIR"/
+  fi
+
+  log_success "Files copied"
+
+  # Install dependencies
+  install_dependencies
+
+  # Create bin directory and symlink
+  mkdir -p "$BIN_DIR"
+  ln -sf "${INSTALL_DIR}/node_modules/.bin/prism" "${BIN_DIR}/prism"
+
+  # Configure PATH
+  configure_path
+
+  # Create manifest
+  create_installation_manifest "$version" "$platform"
+
+  # Verify installation
+  verify_installation
+
+  # Show success message
+  show_success_message "$version"
 }
 
 # Parse command line arguments
