@@ -137,8 +137,9 @@
 - [ ] T050 [P] Add Windows/WSL compatibility testing in tests/install/integration/test-wsl.sh
 - [ ] T051 Update README.md with curl install instructions
 - [ ] T052 Create GitHub Pages redirect for https://install.mt-prism.dev (CNAME + index.html)
-- [ ] T053 Test install script on all supported platforms (macOS Intel/ARM, Linux amd64/arm64, WSL)
-- [ ] T054 Generate release checklist documenting required GitHub Release assets
+- [ ] T053 [P] Document GitHub Pages/CNAME setup process in docs/deployment/install-hosting.md
+- [ ] T054 Test install script on all supported platforms (macOS Intel/ARM, Linux amd64/arm64, WSL)
+- [ ] T055 Generate release checklist documenting required GitHub Release assets
 
 ---
 
@@ -232,7 +233,7 @@ Sequential: T051 → T052 → T053 → T054 (documentation and release)
 7. **CHECKPOINT** - Config automation working
 8. Phase 5 (US3): T035-T044
 9. **CHECKPOINT** - Version management complete
-10. Phase 6 (Polish): T045-T054
+10. Phase 6 (Polish): T045-T055
 11. **CHECKPOINT** - Production ready
 
 ---
@@ -244,9 +245,9 @@ Sequential: T051 → T052 → T053 → T054 (documentation and release)
 - **User Story 1 (P1)**: 15 tasks (MVP)
 - **User Story 2 (P2)**: 7 tasks
 - **User Story 3 (P3)**: 10 tasks
-- **Polish**: 10 tasks
+- **Polish**: 11 tasks
 
-**Total**: 54 tasks
+**Total**: 55 tasks
 
 **Parallel Opportunities**: ~40% of tasks can run in parallel within their phases
 
