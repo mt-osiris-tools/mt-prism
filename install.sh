@@ -2,8 +2,15 @@
 #
 # MT-PRISM Installation Script
 #
-# Usage: curl -fsSL https://install.mt-prism.dev | sh
+# Usage: curl -fsSL https://install.mt-prism.dev | bash
 #
+# Note: Use 'bash' not 'sh' - script requires bash features
+
+# Re-exec with bash if running under sh
+if [ -z "$BASH_VERSION" ]; then
+  exec bash "$0" "$@"
+fi
+
 set -euo pipefail
 
 # Script version
