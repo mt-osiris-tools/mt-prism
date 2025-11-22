@@ -114,7 +114,7 @@ export class WorkflowError extends PRISMError {
   constructor(
     message: string,
     public readonly step: string,
-    public readonly cause?: Error
+    public override readonly cause?: Error
   ) {
     super(
       `Workflow failed at step ${step}: ${message}`,

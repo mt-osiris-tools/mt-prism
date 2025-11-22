@@ -165,10 +165,10 @@ export async function analyzePRDFromConfluence(
   // Create Confluence client
   const client = new ConfluenceMCPClient({
     name: 'confluence',
-    endpoint: process.env.CONFLUENCE_URL,
+    endpoint: process.env['CONFLUENCE_URL'],
     credentials: {
-      apiToken: process.env.CONFLUENCE_API_TOKEN,
-      username: process.env.CONFLUENCE_USERNAME,
+      apiToken: process.env['CONFLUENCE_API_TOKEN'] || '',
+      username: process.env['CONFLUENCE_USERNAME'] || '',
     },
   });
 

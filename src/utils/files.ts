@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import { dirname, join } from 'path';
+import { dirname } from 'path';
 import { parse as parseYAML, stringify as stringifyYAML } from 'yaml';
 import type { ZodSchema } from 'zod';
 

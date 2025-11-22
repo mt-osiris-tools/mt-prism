@@ -6,7 +6,8 @@
  * @module skills/prd-analyzer/ambiguity-detector
  */
 
-import type { RequirementIssue, GapSeverity } from '../../types/requirement.js';
+import type { RequirementIssue } from '../../types/requirement.js';
+import type { GapSeverity } from '../../types/gap.js';
 
 /**
  * Detects ambiguities and issues in a requirement
@@ -46,7 +47,7 @@ export function detectAmbiguities(
   vaguePerformanceTerms.forEach(({ term, replacement }) => {
     if (lowerText.includes(term)) {
       issues.push({
-        type: 'ambiguous',
+        type: 'ambiguity',
         severity: 'high',
         description: `Vague performance term "${term}" - should specify ${replacement}`,
       });
@@ -62,7 +63,7 @@ export function detectAmbiguities(
   vagueQualityTerms.forEach((term) => {
     if (lowerText.includes(term)) {
       issues.push({
-        type: 'ambiguous',
+        type: 'ambiguity',
         severity: 'medium',
         description: `Subjective term "${term}" - should define specific, measurable criteria`,
       });
@@ -83,7 +84,7 @@ export function detectAmbiguities(
     const regex = new RegExp(`\\b${term}\\b`, 'i');
     if (regex.test(lowerText)) {
       issues.push({
-        type: 'ambiguous',
+        type: 'ambiguity',
         severity: 'medium',
         description: `Vague quantity "${term}" - should specify ${replacement}`,
       });
@@ -120,7 +121,7 @@ export function detectAmbiguities(
   uncertainLanguage.forEach((term) => {
     if (lowerText.includes(term)) {
       issues.push({
-        type: 'ambiguous',
+        type: 'ambiguity',
         severity: 'medium',
         description: `Uncertain language: "${term}" - requirement should be definitive`,
       });
@@ -162,7 +163,7 @@ export function detectAmbiguities(
   contradictionPatterns.forEach(({ pattern, desc }) => {
     if (pattern.test(text)) {
       issues.push({
-        type: 'ambiguous',
+        type: 'ambiguity',
         severity: 'high',
         description: desc,
       });
@@ -208,7 +209,7 @@ export function detectAmbiguities(
     const pattern = new RegExp(keyword, 'i');
     if (pattern.test(text)) {
       issues.push({
-        type: 'ambiguous',
+        type: 'ambiguity',
         severity: 'high',
         description: 'Stakeholder disagreement detected - requires resolution before implementation',
       });
@@ -238,7 +239,7 @@ export function detectAmbiguities(
   if (hasSecurityContext) {
     // Upgrade severity of ambiguities in security context
     issues.forEach((issue) => {
-      if (issue.type === 'ambiguous' && issue.severity !== 'critical') {
+      if (issue.type === 'ambiguity' && issue.severity !== 'critical') {
         issue.severity = issue.severity === 'low' ? 'medium' : 'high';
         issue.description += ' (elevated due to security context)';
       }

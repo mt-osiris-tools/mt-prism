@@ -49,3 +49,6 @@ temp/
 docs/ai-use-cases/
 docs/planning/
 docs/specs/
+
+# Use Case Documentation
+.usecase/cases/

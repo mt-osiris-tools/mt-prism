@@ -27,7 +27,8 @@ export type {
   RequirementIssue,
 } from './types/requirement.js';
 
-export type { ComponentsOutput, ComponentSchemaType } from './types/component.js';
+export type { ComponentsOutput } from './types/component.js';
+export type { ComponentSchemaType } from './schemas/component.js';
 
 export type { Gap, GapsOutput, GapType, GapSeverity } from './types/gap.js';
 

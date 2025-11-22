@@ -31,26 +31,26 @@ export type FallbackNotifier = (event: ProviderFallbackEvent) => void;
  * @returns Provider configuration
  */
 export function loadProviderConfig(): ProviderConfig {
-  const provider = (process.env.AI_PROVIDER || 'anthropic') as
+  const provider = (process.env['AI_PROVIDER'] || 'anthropic') as
     | 'anthropic'
     | 'openai'
     | 'google';
 
   const apiKeys = {
-    anthropic: process.env.ANTHROPIC_API_KEY,
-    openai: process.env.OPENAI_API_KEY,
-    google: process.env.GOOGLE_API_KEY,
+    anthropic: process.env['ANTHROPIC_API_KEY'],
+    openai: process.env['OPENAI_API_KEY'],
+    google: process.env['GOOGLE_API_KEY'],
   };
 
   return {
     provider,
     apiKeys,
-    model: process.env.AI_MODEL,
-    temperature: process.env.AI_TEMPERATURE
-      ? parseFloat(process.env.AI_TEMPERATURE)
+    model: process.env['AI_MODEL'],
+    temperature: process.env['AI_TEMPERATURE']
+      ? parseFloat(process.env['AI_TEMPERATURE'])
       : undefined,
-    maxTokens: process.env.AI_MAX_TOKENS
-      ? parseInt(process.env.AI_MAX_TOKENS, 10)
+    maxTokens: process.env['AI_MAX_TOKENS']
+      ? parseInt(process.env['AI_MAX_TOKENS'], 10)
       : undefined,
   };
 }
