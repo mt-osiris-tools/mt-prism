@@ -269,6 +269,9 @@ main() {
   # Verify prerequisites
   verify_prerequisites
 
+  # Check for existing installation
+  check_existing_installation
+
   # Determine version
   local version="${TARGET_VERSION}"
   if [ -z "$version" ]; then
@@ -308,6 +311,9 @@ main() {
   # Configure PATH
   configure_path
 
+  # Configure environment
+  configure_environment
+
   # Create manifest
   create_installation_manifest "$version" "$platform"
 
@@ -316,6 +322,26 @@ main() {
 
   # Show success message
   show_success_message "$version"
+}
+
+# Configure .env file
+configure_environment() {
+  log_step "Configuring environment..."
+
+  local env_file="${INSTALL_DIR}/.env"
+  local env_example="${INSTALL_DIR}/.env.example"
+
+  if [ -f "$env_file" ]; then
+    log_success ".env file already exists (preserved)"
+    return 0
+  fi
+
+  if [ -f "$env_example" ]; then
+    cp "$env_example" "$env_file"
+    log_success "Created .env from template"
+  else
+    log_info ".env.example not found, skipping .env creation"
+  fi
 }
 
 # Parse command line arguments
@@ -373,10 +399,69 @@ For more info: https://github.com/${GITHUB_REPO}
 EOF
 }
 
+check_existing_installation() {
+  local manifest="${INSTALL_DIR}/install.json"
+
+  if [ ! -f "$manifest" ]; then
+    return 0
+  fi
+
+  log_info "Existing installation detected"
+
+  local installed_version
+  installed_version=$(grep '"version"' "$manifest" | sed -E 's/.*"version": "([^"]+)".*/\1/')
+
+  echo ""
+  echo "Currently installed: v${installed_version}"
+  echo ""
+  echo "Options:"
+  echo "  1) Update to latest"
+  echo "  2) Reinstall current version"
+  echo "  3) Cancel"
+  echo ""
+  read -p "Choose [1-3]: " -n 1 -r choice
+  echo ""
+
+  case $choice in
+    1)
+      log_info "Proceeding with update..."
+      ;;
+    2)
+      log_info "Proceeding with reinstall..."
+      ;;
+    3|*)
+      log_info "Installation cancelled"
+      exit 0
+      ;;
+  esac
+}
+
 uninstall_prism() {
-  log_info "Uninstalling MT-PRISM..."
-  # Uninstall logic will be added in Phase 5 (US3)
-  log_info "Uninstall feature coming in Phase 5"
+  log_step "Uninstalling MT-PRISM..."
+
+  if [ ! -d "$INSTALL_DIR" ]; then
+    log_error "MT-PRISM is not installed"
+    exit 1
+  fi
+
+  # Remove installation directory
+  rm -rf "$INSTALL_DIR"
+
+  # Remove PATH entries from shell profiles
+  for profile in ~/.bashrc ~/.zshrc; do
+    if [ -f "$profile" ]; then
+      # Remove MT-PRISM PATH entries
+      sed -i.bak '/# MT-PRISM/d' "$profile" 2>/dev/null || true
+      sed -i.bak '/mt-prism\/bin/d' "$profile" 2>/dev/null || true
+      rm -f "${profile}.bak"
+    fi
+  done
+
+  log_success "MT-PRISM uninstalled successfully"
+  echo ""
+  echo "Your .prism session data was preserved"
+  echo "To remove session data: rm -rf ~/.prism"
+  echo ""
 }
 
 # Run installer
