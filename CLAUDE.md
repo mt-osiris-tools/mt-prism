@@ -283,3 +283,10 @@ When implementing features, ensure:
 - ✅ Works with all three AI providers (provider-agnostic)
 - ✅ Zero infrastructure dependencies
 - ✅ All data stored locally in `.prism/`
+
+## Active Technologies
+- Bash 4.0+ (shell script for installer) + curl, tar, grep, sed (standard POSIX utilities) (003-curl-install)
+- Local filesystem (`~/.mt-prism/` for installation, `install.json` for manifest) (003-curl-install)
+
+## Recent Changes
+- 003-curl-install: Added Bash 4.0+ (shell script for installer) + curl, tar, grep, sed (standard POSIX utilities)

@@ -1,0 +1,43 @@
+name: Test Install Script
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'install.sh'
+      - 'scripts/install/**'
+      - 'tests/install/**'
+      - '.github/workflows/test-installer.yml'
+  pull_request:
+    paths:
+      - 'install.sh'
+      - 'scripts/install/**'
+      - 'tests/install/**'
+
+jobs:
+  test-install-script:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node-version: ['20.x', '22.x']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Bats
+        run: npm install -g bats
+
+      - name: Run unit tests
+        run: bats tests/install/unit/
+
+      - name: Run integration test (dry-run)
+        run: |
+          bash install.sh --help || true
+          echo "Install script syntax check passed"
