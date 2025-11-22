@@ -52,6 +52,7 @@
   "devDependencies": {
     "@types/node": "^24.10.1",
     "@vitest/coverage-v8": "^4.0.12",
+    "bats": "^1.13.0",
     "eslint": "^9.39.1",
     "prettier": "^3.6.2",
     "tsx": "^4.20.6",
