@@ -2,8 +2,17 @@
 #
 # MT-PRISM Installation Script
 #
-# Usage: curl -fsSL https://install.mt-prism.dev | sh
+# Usage: curl -fsSL https://install.mt-prism.dev | bash
 #
+# Note: Use 'bash' not 'sh' - script requires bash features
+
+# Ensure running under bash
+if [ -z "$BASH_VERSION" ]; then
+  echo "Error: This script requires bash. Please run with:" >&2
+  echo "  curl -fsSL https://raw.githubusercontent.com/mt-osiris-tools/mt-prism/main/install.sh | bash" >&2
+  exit 1
+fi
+
 set -euo pipefail
 
 # Script version

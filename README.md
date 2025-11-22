@@ -166,10 +166,10 @@ See: [Implementation Plan](docs/planning/IMPLEMENTATION_PLAN.md)
 
 ```bash
 # Install with a single command
-curl -fsSL https://raw.githubusercontent.com/mt-osiris-tools/mt-prism/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/mt-osiris-tools/mt-prism/main/install.sh | bash
 
 # Or install specific version
-curl -fsSL https://raw.githubusercontent.com/mt-osiris-tools/mt-prism/main/install.sh | sh -s -- --version 1.0.0
+curl -fsSL https://raw.githubusercontent.com/mt-osiris-tools/mt-prism/main/install.sh | bash -s -- --version 1.0.0
 ```
 
 The installer will:
