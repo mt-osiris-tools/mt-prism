@@ -424,10 +424,10 @@ function generateQualityReport(result: {
 
   // Score breakdown
   lines.push('## Quality Dimensions\n');
-  lines.push(`- **Completeness**: ${(result.scores.completeness * 100).toFixed(1)}%`);
-  lines.push(`- **Clarity**: ${(result.scores.clarity * 100).toFixed(1)}%`);
-  lines.push(`- **Consistency**: ${(result.scores.consistency * 100).toFixed(1)}%`);
-  lines.push(`- **Testability**: ${(result.scores.testability * 100).toFixed(1)}%\n`);
+  lines.push(`- **Completeness**: ${((result.scores['completeness'] || 0) * 100).toFixed(1)}%`);
+  lines.push(`- **Clarity**: ${((result.scores['clarity'] || 0) * 100).toFixed(1)}%`);
+  lines.push(`- **Consistency**: ${((result.scores['consistency'] || 0) * 100).toFixed(1)}%`);
+  lines.push(`- **Testability**: ${((result.scores['testability'] || 0) * 100).toFixed(1)}%\n`);
 
   // Checks summary
   lines.push('## Validation Summary\n');

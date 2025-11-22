@@ -47,9 +47,8 @@ export async function analyzeFigmaDesign(
     }
 
     // Validate JSON format
-    let parsedFigma: unknown;
     try {
-      parsedFigma = JSON.parse(figmaData);
+      JSON.parse(figmaData);
     } catch (error) {
       throw new WorkflowError(
         'Invalid Figma data: must be valid JSON',

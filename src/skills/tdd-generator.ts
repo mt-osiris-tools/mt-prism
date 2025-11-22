@@ -161,7 +161,7 @@ async function generateSimplifiedTDD(
     },
     paths: requirements.requirements
       .filter(r => r.type === 'functional')
-      .reduce((acc, req, idx) => {
+      .reduce((acc, req, _idx) => {
         acc[`/api/v1/${req.id.toLowerCase()}`] = {
           get: {
             summary: req.title,

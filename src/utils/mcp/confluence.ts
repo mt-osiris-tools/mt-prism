@@ -47,10 +47,10 @@ export class ConfluenceMCPClient extends MCPClient {
   constructor(config: Partial<MCPConfig> = {}) {
     super({
       name: 'confluence',
-      endpoint: config.endpoint || process.env.CONFLUENCE_URL || '',
+      endpoint: config.endpoint || process.env['CONFLUENCE_URL'] || '',
       credentials: config.credentials || {
-        apiToken: process.env.CONFLUENCE_API_TOKEN || '',
-        username: process.env.CONFLUENCE_USERNAME || '',
+        apiToken: process.env['CONFLUENCE_API_TOKEN'] || '',
+        username: process.env['CONFLUENCE_USERNAME'] || '',
       },
       timeout: config.timeout || 30000,
       maxRetries: config.maxRetries || 3,
@@ -66,7 +66,7 @@ export class ConfluenceMCPClient extends MCPClient {
     }
 
     const creds = this.config.credentials as Record<string, string>;
-    if (!creds.apiToken || !creds.username) {
+    if (!creds['apiToken'] || !creds['username']) {
       throw new MCPError(
         'Confluence credentials not configured. Set CONFLUENCE_API_TOKEN and CONFLUENCE_USERNAME environment variables.',
         this.config.name,
@@ -255,7 +255,7 @@ export class ConfluenceMCPClient extends MCPClient {
     const creds = this.config.credentials as Record<string, string>;
 
     // Create basic auth header
-    const authHeader = `Basic ${Buffer.from(`${creds.username}:${creds.apiToken}`).toString('base64')}`;
+    const authHeader = `Basic ${Buffer.from(`${creds['username']}:${creds['apiToken']}`).toString('base64')}`;
 
     try {
       // Use node-fetch for HTTP requests
@@ -299,7 +299,7 @@ export class ConfluenceMCPClient extends MCPClient {
     } catch (error) {
       return {
         error: {
-          code: 'CONFLUENCE_ERROR',
+          code: -32000,
           message: error instanceof Error ? error.message : String(error),
         },
       };

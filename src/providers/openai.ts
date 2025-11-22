@@ -1,6 +1,5 @@
 import OpenAI from 'openai';
 import type { ZodSchema } from 'zod';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import type {
   LLMProvider,
   GenerateOptions,

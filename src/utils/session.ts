@@ -6,7 +6,6 @@ import {
   fileExists,
 } from './files.js';
 import {
-  SessionSchema,
   SessionStateSchema,
   CheckpointSchema,
 } from '../schemas/session.js';
@@ -71,17 +70,17 @@ export async function initSession(
     created_at: now,
     updated_at: now,
     prd_source: prdSource,
-    figma_source,
+    figma_source: figmaSource,
     outputs: {},
     checkpoints: [],
     config: {
-      ai_provider: process.env.AI_PROVIDER || 'anthropic',
+      ai_provider: process.env['AI_PROVIDER'] || 'anthropic',
       workflow_timeout_minutes: parseInt(
-        process.env.WORKFLOW_TIMEOUT_MINUTES || '20',
+        process.env['WORKFLOW_TIMEOUT_MINUTES'] || '20',
         10
       ),
       max_clarification_iterations: parseInt(
-        process.env.MAX_CLARIFICATION_ITERATIONS || '3',
+        process.env['MAX_CLARIFICATION_ITERATIONS'] || '3',
         10
       ),
     },
