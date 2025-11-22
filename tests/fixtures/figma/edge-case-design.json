@@ -1,0 +1,160 @@
+{
+  "name": "Edge Case Design",
+  "document": {
+    "id": "0:0",
+    "name": "Edge Cases",
+    "type": "DOCUMENT",
+    "children": [
+      {
+        "id": "1:0",
+        "name": "Components",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "2:1",
+            "name": "UnnamedComponent",
+            "type": "COMPONENT",
+            "description": "",
+            "children": []
+          },
+          {
+            "id": "2:2",
+            "name": "ComponentWithoutChildren",
+            "type": "COMPONENT",
+            "description": "Component with no child elements"
+          },
+          {
+            "id": "2:3",
+            "name": "DeeplyNestedComponent",
+            "type": "COMPONENT",
+            "description": "Component with 10+ levels of nesting",
+            "children": [
+              {
+                "id": "2:4",
+                "name": "Level1",
+                "type": "FRAME",
+                "children": [
+                  {
+                    "id": "2:5",
+                    "name": "Level2",
+                    "type": "FRAME",
+                    "children": [
+                      {
+                        "id": "2:6",
+                        "name": "Level3",
+                        "type": "FRAME",
+                        "children": [
+                          {
+                            "id": "2:7",
+                            "name": "Level4",
+                            "type": "FRAME",
+                            "children": [
+                              {
+                                "id": "2:8",
+                                "name": "Level5",
+                                "type": "FRAME",
+                                "children": [
+                                  {
+                                    "id": "2:9",
+                                    "name": "DeepContent",
+                                    "type": "TEXT",
+                                    "characters": "Very nested text"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "2:10",
+            "name": "MissingVariantProperties",
+            "type": "COMPONENT_SET",
+            "children": [
+              {
+                "id": "2:11",
+                "name": "variant-without-properties",
+                "type": "COMPONENT"
+              }
+            ]
+          },
+          {
+            "id": "2:12",
+            "name": "ComponentWithBrokenInstance",
+            "type": "COMPONENT",
+            "children": [
+              {
+                "id": "2:13",
+                "name": "BrokenInstance",
+                "type": "INSTANCE",
+                "componentId": "999:999"
+              }
+            ]
+          },
+          {
+            "id": "2:14",
+            "name": "ComponentWithMissingStyles",
+            "type": "COMPONENT",
+            "children": [
+              {
+                "id": "2:15",
+                "name": "Text",
+                "type": "TEXT",
+                "characters": "Text with missing style",
+                "style": null
+              }
+            ]
+          },
+          {
+            "id": "2:16",
+            "name": "ComponentWithInvalidColors",
+            "type": "COMPONENT",
+            "fills": [
+              {
+                "type": "SOLID",
+                "color": {
+                  "r": 999,
+                  "g": -1,
+                  "b": 256,
+                  "a": 2
+                }
+              }
+            ]
+          },
+          {
+            "id": "2:17",
+            "name": "DuplicateComponentName",
+            "type": "COMPONENT",
+            "description": "First component with this name"
+          },
+          {
+            "id": "2:18",
+            "name": "DuplicateComponentName",
+            "type": "COMPONENT",
+            "description": "Second component with same name"
+          },
+          {
+            "id": "2:19",
+            "name": "Component With Special!@#$%Characters",
+            "type": "COMPONENT",
+            "description": "Component name with special characters"
+          },
+          {
+            "id": "2:20",
+            "name": "EmptyVariantSet",
+            "type": "COMPONENT_SET",
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  "components": {},
+  "styles": {}
+}

@@ -2,438 +2,284 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Multi-Agent System for PRD-to-TDD Automation
+## Project Overview
 
-This repository contains the implementation of a multi-agent system designed to automate the software development process from Product Requirements Document (PRD) to Technical Design Document (TDD).
+MT-PRISM is a **local-first AI plugin** that automates software discovery from Product Requirements Documents (PRDs) to Technical Design Documents (TDDs). It operates within AI coding assistant environments (Claude Code, Cursor, etc.) with **zero infrastructure** - no servers, databases, or containers.
 
-## System Architecture Overview
+**Key Architecture Principle**: Plugin-based skill system where discrete AI skills orchestrate through simple workflows, leveraging native tools and Model Context Protocol (MCP) servers for external integrations.
 
-The system follows a hybrid architecture pattern:
-- **Monolith**: Contains most existing business logic
-- **Microservices**: New and decoupled functionality
-- **React SPA**: Frontend application
+## Common Development Commands
 
-## Agent Architecture
-
-### 1. Orchestrator Agent (Central Coordinator)
-**Role**: Manages the entire workflow, coordinates between agents, and maintains state
-
-**Capabilities**:
-- Workflow state management
-- Agent task assignment and monitoring
-- Decision routing based on outcomes
-- Stakeholder notification management
-- Progress tracking and reporting
-
-**MCPs Required**:
-- Workflow Engine MCP (e.g., Temporal/Airflow integration)
-- Notification Service MCP (Slack/Email)
-- State Store MCP (Redis/PostgreSQL)
-
-**Commands**:
+### Build & Development
 ```bash
-# Start discovery process
-mt-prism orchestrate start --prd-url <confluence-url> --figma-url <figma-url>
-
-# Check workflow status
-mt-prism orchestrate status --workflow-id <id>
-
-# Approve/reject findings
-mt-prism orchestrate review --workflow-id <id> --action <approve|reject>
+npm run build          # Compile TypeScript to dist/
+npm run dev            # Run CLI in development mode with tsx
+npm start              # Run compiled CLI from dist/
 ```
 
-### 2. PRD Analyzer Agent
-**Role**: Extracts, analyzes, and structures PRD content from Confluence
-
-**Capabilities**:
-- Parse Confluence pages and extract structured requirements
-- Identify functional and non-functional requirements
-- Detect ambiguities and missing information
-- Create requirement dependency graphs
-- Generate requirement traceability matrix
-
-**MCPs Required**:
-- Atlassian Confluence MCP
-- Natural Language Processing MCP
-- Document Parser MCP (for attachments)
-
-**Commands**:
+### Testing
 ```bash
-# Analyze PRD
-mt-prism prd analyze --url <confluence-url> --output <json|markdown>
-
-# Extract requirements
-mt-prism prd extract-requirements --prd-id <id> --type <functional|non-functional|all>
-
-# Validate completeness
-mt-prism prd validate --prd-id <id> --template <template-path>
+npm test               # Run all tests with Vitest
+npm run test:watch     # Run tests in watch mode
+npm run test:coverage  # Generate coverage report (80%+ required)
 ```
 
-### 3. UI/UX Analyzer Agent
-**Role**: Analyzes Figma designs and extracts UI specifications
-
-**Capabilities**:
-- Extract component specifications from Figma
-- Identify UI patterns and design system usage
-- Map UI components to functional requirements
-- Detect inconsistencies with design system
-- Generate component inventory
-
-**MCPs Required**:
-- Figma API MCP
-- Image Recognition MCP (for screenshot analysis)
-- Design Token MCP
-
-**Commands**:
+### Code Quality
 ```bash
-# Analyze Figma designs
-mt-prism figma analyze --url <figma-url> --project <project-id>
-
-# Extract components
-mt-prism figma extract-components --file-id <id> --format <json|react>
-
-# Check design consistency
-mt-prism figma validate-consistency --file-id <id> --design-system <path>
+npm run lint           # ESLint on src/ and tests/
+npm run format         # Format code with Prettier
 ```
 
-### 4. Requirements Validator Agent
-**Role**: Cross-references PRD and Figma to identify gaps and inconsistencies
+## Architecture
 
-**Capabilities**:
-- Compare PRD requirements with UI mockups
-- Identify missing UI elements for requirements
-- Detect UI elements without backing requirements
-- Flag technical feasibility concerns
-- Generate clarification questions
+### Local-First Design
 
-**MCPs Required**:
-- Requirement Matching MCP
-- Knowledge Base MCP (for domain rules)
-- Issue Tracking MCP (Jira)
+All data stored in `.prism/` directory - **never create external services, APIs, or cloud infrastructure**. The system must work offline except for AI provider API calls and optional MCP interactions.
 
-**Commands**:
+```
+.prism/
+├── config.yaml              # User configuration
+├── sessions/
+│   └── sess-{timestamp}/    # Session state and all outputs
+│       ├── session_state.yaml
+│       ├── 01-prd-analysis/
+│       ├── 02-figma-analysis/
+│       ├── 03-validation/
+│       ├── 04-clarification/
+│       └── 05-tdd/
+└── metrics.jsonl            # Workflow metrics
+```
+
+### LLM Provider Abstraction
+
+**CRITICAL**: Never call AI provider SDKs directly. Always use the unified abstraction layer at `src/utils/llm.ts`:
+
+```typescript
+// ❌ WRONG - Direct SDK usage
+import Anthropic from '@anthropic-ai/sdk'
+const client = new Anthropic(...)
+
+// ✅ CORRECT - Use abstraction
+import { createLLMProvider } from '../utils/llm'
+const llm = await createLLMProvider()
+const result = await llm.generateText(prompt)
+```
+
+The abstraction supports three providers (Anthropic Claude, OpenAI GPT-4, Google Gemini) with automatic provider selection based on `AI_PROVIDER` environment variable.
+
+### Five Core Skills
+
+1. **PRD Analyzer** (`prism.analyze-prd`) - Extract structured requirements from PRDs
+2. **Figma Analyzer** (`prism.analyze-figma`) - Extract UI components from Figma designs
+3. **Requirements Validator** (`prism.validate`) - Cross-validate requirements against designs
+4. **Clarification Manager** (`prism.clarify`) - Manage Q&A loops with stakeholders
+5. **TDD Generator** (`prism.generate-tdd`) - Generate comprehensive technical design documents
+
+Each skill operates independently but can be orchestrated via the Discovery Workflow (`prism.discover`).
+
+### MCP Integration
+
+External service access must use Model Context Protocol servers:
+- **Confluence MCP**: PRD access from Atlassian
+- **Figma MCP**: Design file access
+- **Jira MCP**: Optional for async clarification
+- **Slack MCP**: Optional for stakeholder notifications
+
+Skills delegate to MCPs rather than implementing API clients directly.
+
+## Code Organization
+
+```
+src/
+├── skills/           # Skill implementations (core logic)
+├── providers/        # LLM provider adapters (Anthropic/OpenAI/Google)
+├── types/           # TypeScript type definitions and Zod schemas
+├── utils/           # Shared utilities (LLM abstraction, file ops, validation)
+└── workflows/       # Skill orchestration
+
+prompts/             # Claude-optimized prompts for each skill
+templates/           # Output schemas and TDD template
+tests/
+├── unit/            # Unit tests (90%+ coverage for skills)
+├── integration/     # Integration tests with MCPs
+└── providers/       # Provider-agnostic tests (run with all LLMs)
+```
+
+## Key Technical Constraints
+
+### TypeScript Strict Mode
+`tsconfig.json` enables all strict checks. Pay attention to:
+- `noUncheckedIndexedAccess` - array/object access may be undefined
+- `noUnusedLocals` and `noUnusedParameters` - remove unused code
+- `noImplicitReturns` - all code paths must return
+
+### Test Coverage Requirements
+- **80%+ overall** (enforced by Vitest)
+- **90%+ for skills** (per constitution)
+- Must test with all three LLM providers to ensure provider-agnostic behavior
+
+### Performance Targets
+- PRD Analysis: < 2 minutes
+- Figma Analysis: < 3 minutes
+- Validation: < 3 minutes
+- TDD Generation: < 5 minutes
+- **Full Workflow: < 20 minutes** (end-to-end)
+
+### Data Format Standards
+
+All outputs must use standardized YAML/JSON schemas with Zod validation:
+
+```typescript
+// ✅ Validate all skill outputs
+import { RequirementsOutputSchema } from '../types/requirement'
+const validated = RequirementsOutputSchema.parse(rawOutput)
+```
+
+Key schemas:
+- `requirements.yaml` - Structured requirements with metadata
+- `components.yaml` - UI component inventory
+- `gaps.yaml` - Validation gaps with severity
+- `api-spec.yaml` - OpenAPI 3.1 specification
+- `database-schema.sql` - Executable SQL DDL
+
+## Constitution & Governance
+
+The project follows strict architectural principles defined in `.specify/memory/constitution.md` (v3.1.0):
+
+**Core Principles**:
+1. **Skill-First Architecture** - Decompose into discrete skills with clear boundaries
+2. **Document-Driven Discovery** - Always start with PRD/Figma analysis
+3. **Test-First Development** - TDD is mandatory (non-negotiable)
+4. **Iterative Clarification** - Resolve ambiguities through structured loops
+5. **Progressive Enhancement** - Deliver in independently valuable increments
+6. **Observable Operations** - Provide progress feedback and metrics
+7. **MCP-Based Integration** - Use protocol for external services
+8. **LLM Provider Abstraction** - Never call provider SDKs directly
+
+**Quality Gates** - Each skill must pass criteria before next skill executes:
+- Analysis Gate (95%+ parsing accuracy)
+- Validation Gate (90%+ gap detection, >85% avg confidence)
+- Clarification Gate (all critical questions answered)
+- TDD Generation Gate (100% requirement coverage, valid OpenAPI/SQL)
+- Acceptance Gate (4.5/5 quality rating on manual review)
+
+## Development Workflow
+
+### Git Strategy
+- `main` - Production releases only (protected)
+- `develop` - Integration branch
+- `feature/{skill-name}` - Feature development
+- Always create feature branches (never commit directly to main)
+
+Use conventional commits:
 ```bash
-# Validate requirements
-mt-prism validate cross-check --prd-id <id> --figma-id <id>
-
-# Generate questions
-mt-prism validate generate-questions --validation-id <id> --stakeholder <product|design|engineering>
-
-# Check feasibility
-mt-prism validate feasibility --requirements <path> --architecture <monolith|microservice>
+feat: implement PRD analyzer skill
+fix: handle empty Figma components
+test: add provider-agnostic validation tests
+docs: update LLM provider guide
 ```
 
-### 5. Clarification Manager Agent
-**Role**: Manages the iterative clarification loop with stakeholders
+### Implementation Order (Progressive Enhancement)
+Phase 1 (Weeks 1-2): PRD Analyzer → Figma Analyzer
+Phase 2 (Week 3): Validator → Clarification Manager
+Phase 3 (Week 4): TDD Generator → Discovery Workflow
+Phase 4 (Week 5): Testing & Launch
 
-**Capabilities**:
-- Categorize and prioritize questions
-- Route questions to appropriate stakeholders
-- Track response status
-- Consolidate answers
-- Update requirements based on responses
+Each skill must be independently usable before moving to the next.
 
-**MCPs Required**:
-- Communication Platform MCP (Slack/Teams)
-- Issue Tracking MCP (Jira)
-- Document Update MCP (Confluence)
+### Prompt Engineering Standards
 
-**Commands**:
-```bash
-# Send clarification requests
-mt-prism clarify send --questions <file> --to <product|design|engineering>
+All LLM prompts in `prompts/` directory must follow:
+- **Temperature**: 0 for analysis, 0.3 for generation
+- **Structure**: Role → Objectives → Guidelines → Format → Examples → Checklist
+- **Examples**: 2-4 few-shot examples covering edge cases
+- **Provider Agnostic**: Must work identically across Claude/GPT-4/Gemini
 
-# Track responses
-mt-prism clarify status --batch-id <id>
+### Error Handling Pattern
+```typescript
+try {
+  await skillLogic()
+} catch (error) {
+  // 1. Save state before failing
+  await saveState()
 
-# Apply clarifications
-mt-prism clarify apply --response-id <id> --target <prd|figma>
+  // 2. Provide actionable error message
+  if (error.code === 'MCP_CONNECTION_FAILED') {
+    throw new Error(
+      'Confluence connection failed. Check CONFLUENCE_URL and token in .env'
+    )
+  }
+
+  // 3. Offer recovery options
+  console.log('Recovery: Use local file with --source ./local-prd.md')
+}
 ```
 
-### 6. Technical Design Agent
-**Role**: Generates TDD based on validated requirements
-
-**Capabilities**:
-- Generate technical architecture proposals
-- Create API specifications
-- Define database schemas
-- Specify integration points
-- Generate implementation tasks and estimates
-
-**MCPs Required**:
-- Code Repository MCP (Git)
-- OpenAPI Spec Generator MCP
-- Database Schema MCP
-- Architecture Decision Records MCP
-
-**Commands**:
-```bash
-# Generate TDD
-mt-prism tdd generate --requirements <path> --template <template-id>
-
-# Create API specs
-mt-prism tdd api-spec --tdd-id <id> --format <openapi|graphql>
-
-# Generate tasks
-mt-prism tdd create-tasks --tdd-id <id> --platform <jira|github>
+### Progress Reporting
+All skills must provide:
+```typescript
+console.log('📄 Analyzing PRD from Confluence...')  // Start
+console.log('🤖 Calling AI provider...')            // Progress
+console.log('✅ Extracted 23 requirements (1m 45s)') // Complete
+console.log('\n💾 Saved to .prism/outputs/requirements.yaml')
 ```
 
-### 7. Code Structure Analyzer Agent
-**Role**: Analyzes existing codebase to inform technical decisions
+## Important Project Files
 
-**Capabilities**:
-- Analyze monolith structure and dependencies
-- Map microservice boundaries
-- Identify reusable components
-- Suggest implementation patterns
-- Detect potential conflicts
+- **AI_AGENT.md** - Comprehensive AI assistant guidance (detailed architecture)
+- **.specify/memory/constitution.md** - Architectural principles and governance
+- **docs/specs/README.md** - All skill specifications
+- **docs/integration/LLM_PROVIDER_GUIDE.md** - Multi-provider configuration
+- **docs/integration/AGENT_INTEGRATION_GUIDE.md** - Platform-specific setup
+- **docs/strategy/LOCAL_FIRST_STRATEGY.md** - Zero-infrastructure principles
+- **.env.example** - Environment configuration template
 
-**MCPs Required**:
-- Code Analysis MCP (AST parsing)
-- Dependency Graph MCP
-- Git History MCP
+### SpecKit Slash Commands
+The project uses SpecKit workflow for feature development:
+- `/speckit.specify` - Create/update feature specifications
+- `/speckit.plan` - Execute implementation planning
+- `/speckit.tasks` - Generate dependency-ordered tasks
+- `/speckit.implement` - Execute implementation plan
+- `/speckit.clarify` - Identify underspecified areas
+- `/speckit.analyze` - Cross-artifact consistency checks
 
-**Commands**:
-```bash
-# Analyze codebase
-mt-prism code analyze --repo <path> --type <monolith|microservice|frontend>
+## Cost & Performance Context
 
-# Find similar implementations
-mt-prism code find-similar --requirement <desc> --repo <path>
+**Budget**: ~$58K Year 1 (development + API costs)
 
-# Check impact
-mt-prism code impact-analysis --changes <proposed-changes.json>
-```
+**Per-Workflow Costs** (100 workflows/month):
+- Anthropic Claude: ~$4.00/workflow (~$4,800/year)
+- OpenAI GPT-4: ~$3.50/workflow (~$4,200/year)
+- Google Gemini: ~$2.50/workflow (~$3,000/year)
 
-## Data Flow & Orchestration
+**Why This Approach**: 95% cost savings vs. full multi-agent system ($1.3M), 4-5 weeks vs. 20 weeks development time, zero infrastructure maintenance.
 
-```mermaid
-graph TD
-    A[Confluence PRD] --> B[PRD Analyzer Agent]
-    C[Figma Designs] --> D[UI/UX Analyzer Agent]
+## Security & Privacy
 
-    B --> E[Requirements Validator Agent]
-    D --> E
+**Credentials**: Store all API keys in `.env` (gitignored), never in code/config
+**Data Privacy**: PRD/Figma content sent to AI provider APIs (documented to users)
+**Local Data**: All TDD outputs, metrics, session state stay on developer machine
+**Retention**: 30-day default for `.prism/` data (configurable)
 
-    E --> F{Gaps Found?}
-    F -->|Yes| G[Clarification Manager Agent]
-    G --> H[Stakeholder Communication]
-    H --> I[Responses]
-    I --> E
+## What NOT to Do
 
-    F -->|No| J[Technical Design Agent]
-    K[Code Structure Analyzer Agent] --> J
+- ❌ Create servers, databases, Docker containers, or cloud services
+- ❌ Call AI provider SDKs directly (Anthropic/OpenAI/Google)
+- ❌ Implement API clients for Confluence/Figma (use MCPs)
+- ❌ Store data externally (everything in `.prism/` directory)
+- ❌ Commit directly to main branch (use feature branches)
+- ❌ Skip tests or accept <80% coverage
+- ❌ Use generic error messages (always actionable)
+- ❌ Assume single provider (must work with all three)
 
-    J --> L[TDD Document]
-    L --> M[Review & Approval]
+## Success Criteria
 
-    N[Orchestrator Agent] -.->|Coordinates| B
-    N -.->|Coordinates| D
-    N -.->|Coordinates| E
-    N -.->|Coordinates| G
-    N -.->|Coordinates| J
-    N -.->|Coordinates| K
-```
-
-## Integration Requirements
-
-### Required APIs & Access
-- **Confluence API**: Read/write access to PRD space
-- **Figma API**: Read access to design files
-- **Jira API**: Create/update issues for tracking
-- **Git Repository**: Read access for code analysis
-- **Slack/Teams API**: For stakeholder communication
-- **OpenAI/Anthropic API**: For NLP and generation tasks
-
-### Data Formats
-```yaml
-# Standard Requirement Format
-requirement:
-  id: REQ-001
-  type: functional|non-functional
-  description: string
-  acceptance_criteria: []
-  ui_components: []
-  api_endpoints: []
-  dependencies: []
-  priority: high|medium|low
-  status: draft|validated|approved
-```
-
-### Environment Variables
-```bash
-# Confluence
-CONFLUENCE_URL=https://your-domain.atlassian.net
-CONFLUENCE_TOKEN=<token>
-CONFLUENCE_SPACE_KEY=<space>
-
-# Figma
-FIGMA_ACCESS_TOKEN=<token>
-FIGMA_TEAM_ID=<team-id>
-
-# Communication
-SLACK_TOKEN=<token>
-SLACK_CHANNEL_PRODUCT=<channel-id>
-SLACK_CHANNEL_DESIGN=<channel-id>
-SLACK_CHANNEL_ENGINEERING=<channel-id>
-
-# Repository
-GIT_REPO_URL=<url>
-GIT_TOKEN=<token>
-
-# AI Services
-OPENAI_API_KEY=<key>
-ANTHROPIC_API_KEY=<key>
-```
-
-## Automation Workflows
-
-### 1. Discovery Initiation
-```bash
-# Triggered by PRD publication in Confluence
-mt-prism workflow start-discovery \
-  --prd-url <confluence-url> \
-  --figma-url <figma-url> \
-  --assignee <email> \
-  --deadline <date>
-```
-
-### 2. Continuous Validation
-```bash
-# Run validation checks on schedule
-mt-prism workflow schedule-validation \
-  --frequency daily \
-  --time 09:00 \
-  --notify-on <changes|errors|always>
-```
-
-### 3. TDD Generation
-```bash
-# Generate TDD after approval
-mt-prism workflow generate-tdd \
-  --validated-requirements <path> \
-  --template standard \
-  --output-format <confluence|markdown|pdf>
-```
-
-## Development Commands
-
-### Setup & Configuration
-```bash
-# Initialize the multi-agent system
-npm install
-npm run setup:agents
-
-# Configure agent connections
-npm run config:confluence
-npm run config:figma
-npm run config:git
-
-# Run agent tests
-npm test:agents
-```
-
-### Running Agents
-```bash
-# Start all agents in development mode
-npm run dev:agents
-
-# Start specific agent
-npm run agent:prd-analyzer
-npm run agent:ui-analyzer
-npm run agent:validator
-
-# Monitor agent health
-npm run monitor:agents
-```
-
-### Building & Deployment
-```bash
-# Build agent containers
-docker-compose build
-
-# Deploy to Kubernetes
-kubectl apply -f k8s/agents/
-
-# Scale agents
-kubectl scale deployment prd-analyzer --replicas=3
-```
-
-## Architecture Considerations
-
-### For Monolith Integration
-- Agents should respect existing transaction boundaries
-- Use database views for read-only operations
-- Implement circuit breakers for monolith API calls
-- Cache frequently accessed monolith data
-
-### For Microservices
-- Each agent can be deployed as a separate microservice
-- Use event-driven communication where appropriate
-- Implement saga patterns for distributed transactions
-- Use service mesh for inter-agent communication
-
-### For React SPA
-- Generate TypeScript interfaces from requirements
-- Create component stubs based on Figma analysis
-- Generate Storybook stories for UI components
-- Provide React Query hooks for API integration
-
-## Testing Strategy
-
-```bash
-# Unit tests for individual agents
-npm run test:unit
-
-# Integration tests for agent interactions
-npm run test:integration
-
-# End-to-end workflow tests
-npm run test:e2e
-
-# Load testing for agent scalability
-npm run test:load
-```
-
-## Monitoring & Observability
-
-```bash
-# View agent logs
-mt-prism logs --agent <agent-name> --tail 100
-
-# Check agent metrics
-mt-prism metrics --agent <agent-name> --period 1h
-
-# View workflow traces
-mt-prism trace --workflow-id <id>
-
-# Generate performance report
-mt-prism report --from <date> --to <date> --output report.pdf
-```
-
-## Prerequisites
-
-1. **Access Tokens**: All API tokens must be configured
-2. **Template Library**: TDD templates must be defined
-3. **Design System**: Component library must be documented
-4. **Validation Rules**: Business rules must be codified
-5. **Communication Channels**: Slack/Teams channels must be set up
-
-## Next Steps
-
-1. Implement core agent framework
-2. Create MCP adapters for each integration
-3. Define workflow templates
-4. Set up monitoring infrastructure
-5. Create training data for ML components
-6. Deploy in staging environment
-7. Run pilot with single project
-8. Iterate based on feedback
-9. Scale to full deployment
-
-## Active Technologies
-- TypeScript 5.3+ + @anthropic-ai/sdk ^0.27.0, yaml ^2.3.4, zod ^3.22.4 (001-prism-plugin)
-- Local filesystem (.prism/ directory for session state, outputs, and metrics) (001-prism-plugin)
-
-## Recent Changes
-- 001-prism-plugin: Added TypeScript 5.3+ + @anthropic-ai/sdk ^0.27.0, yaml ^2.3.4, zod ^3.22.4
+When implementing features, ensure:
+- ✅ 95%+ extraction accuracy (PRD/Figma analyzers)
+- ✅ 90%+ gap detection rate (validator)
+- ✅ < 20 min full workflow time (end-to-end)
+- ✅ 4.5/5 TDD quality rating (manual review)
+- ✅ 80%+ test coverage (enforced)
+- ✅ Works with all three AI providers (provider-agnostic)
+- ✅ Zero infrastructure dependencies
+- ✅ All data stored locally in `.prism/`

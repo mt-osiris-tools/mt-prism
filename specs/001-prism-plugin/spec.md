@@ -1,15 +1,26 @@
-# Feature Specification: MT-PRISM Claude Code Plugin
+# Feature Specification: MT-PRISM AI Agent Plugin
 
 **Feature Branch**: `001-prism-plugin`
 **Created**: 2025-11-05
+**Updated**: 2025-11-19 (Multi-provider support added)
 **Status**: Draft
-**Input**: User description: "Create MT-PRISM as a Claude Code plugin (not a full multi-agent system). The plugin has 5 skills that run within Claude Code: (1) PRD Analyzer - extracts requirements from Confluence/local PRDs with 95%+ accuracy in <2 min, (2) Figma Analyzer - extracts UI components and design tokens in <3 min, (3) Requirements Validator - cross-validates requirements vs designs, detects gaps, generates clarification questions in <3 min, (4) Clarification Manager - manages interactive/async Q&A with stakeholders via Jira/Slack, and (5) TDD Generator - creates comprehensive TDD with API specs, database schemas, task breakdowns in <5 min. Full workflow completes in <20 minutes. Uses MCPs for Confluence, Figma, Jira, Slack. Zero infrastructure needed - runs in Claude Code environment. Cost: ~$60K vs $1.3M for full system. Timeline: 4-5 weeks. See app_adn.md v3.0.0 and constitution v3.0.0 for architecture details."
+**Input**: User description: "Create MT-PRISM as an AI agent plugin (supporting Claude, GPT-4, Gemini) that works with any AI coding assistant. The plugin has 5 skills: (1) PRD Analyzer - extracts requirements from Confluence/local PRDs with 95%+ accuracy in <2 min, (2) Figma Analyzer - extracts UI components and design tokens in <3 min, (3) Requirements Validator - cross-validates requirements vs designs, detects gaps, generates clarification questions in <3 min, (4) Clarification Manager - manages interactive/async Q&A with stakeholders via Jira/Slack, and (5) TDD Generator - creates comprehensive TDD with API specs, database schemas, task breakdowns in <5 min. Full workflow completes in <20 minutes. Uses MCPs for Confluence, Figma, Jira, Slack. Zero infrastructure needed - runs in any AI coding environment. Multi-provider support via LLM abstraction layer. Cost: ~$60K vs $1.3M for full system. Timeline: 4-5 weeks."
+
+## Clarifications
+
+### Session 2025-11-20
+
+- Q: When the configured AI provider (e.g., Claude) fails or reaches rate limits, how should the system handle fallback to alternative providers? → A: Automatic fallback with user notification - try next available provider (Claude → GPT-4 → Gemini) and inform user
+- Q: When a skill fails mid-execution leaving partial/corrupted output files, how should the system handle cleanup? → A: Atomic writes with automatic rollback - write to temp location, validate, then atomic rename (failed writes never create visible files)
+- Q: Which workflow steps should trigger checkpoint saves (state snapshots for resume capability)? → A: After each skill completes successfully - 5 checkpoints total (PRD analysis done, Figma done, validation done, clarification done, TDD done)
+- Q: How should the test-first development workflow be enforced during skill implementation? → A: TDD cycle with verification gates - CI must verify tests fail before implementation commit, then pass after (enforce red-green-refactor)
+- Q: What level of behavioral consistency is required across the three AI providers (Claude, GPT-4, Gemini)? → A: Functionally equivalent outputs with acceptable variance - all providers must meet quality thresholds (95% accuracy, valid schemas) but exact wording can differ
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - PRD Requirement Extraction (Priority: P1)
 
-As a developer using Claude Code, I need to automatically extract and structure requirements from PRD documents so that I can quickly understand what needs to be built without manually reading through long documents.
+As a developer using an AI coding assistant, I need to automatically extract and structure requirements from PRD documents so that I can quickly understand what needs to be built without manually reading through long documents.
 
 **Why this priority**: This is the foundational capability of MT-PRISM. Without requirement extraction, no other skills can function. This delivers immediate value by automating the most time-consuming part of the discovery process.
 
@@ -125,12 +136,12 @@ As a distributed team member, I need to send clarification questions via Jira ti
 
 - What happens when Confluence PRD is inaccessible (404, auth error)? System should provide clear error message and suggest using local file as fallback
 - What happens when Figma file is private/restricted? System should detect permission error and guide user to check MCP configuration
-- What happens when Claude API rate limit is reached? System should retry with exponential backoff and inform user of delay
+- What happens when AI provider API rate limit is reached? System should automatically fallback to next available provider (Claude → GPT-4 → Gemini order), notify user of the fallback, and continue workflow without interruption
 - What happens when PRD has zero requirements (empty document)? System should warn user and generate minimal output
 - What happens when validation finds >20 critical gaps? System should prioritize top 10 and suggest addressing most critical before proceeding
 - What happens when clarification responses are incomplete/unclear? System should flag low-confidence responses and request re-clarification
 - What happens when TDD generation produces invalid OpenAPI spec? System should validate and retry with corrected prompt, or flag for manual review
-- What happens if workflow is interrupted mid-execution? System should save session state and allow resume from last checkpoint
+- What happens if workflow is interrupted mid-execution? System should save session state and allow resume from last checkpoint (atomic writes ensure no partial output files are left behind)
 
 ## Requirements *(mandatory)*
 
@@ -202,10 +213,16 @@ As a distributed team member, I need to send clarification questions via Jira ti
 #### Workflow Orchestration
 
 - **FR-049**: System MUST execute complete discovery workflow in under 20 minutes (excluding stakeholder wait time)
-- **FR-050**: System MUST save session state at each workflow step for resume capability
+- **FR-050**: System MUST save session state checkpoints after each skill completes successfully: (1) after PRD analysis, (2) after Figma analysis, (3) after validation, (4) after clarification, (5) after TDD generation
 - **FR-051**: System MUST provide clear progress indicators showing current step and estimated time
 - **FR-052**: System MUST handle skill failures gracefully with error recovery options
 - **FR-053**: System MUST allow resuming interrupted workflows from last successful checkpoint
+- **FR-054**: System MUST implement automatic fallback chain when AI provider fails (Claude → GPT-4 → Gemini order)
+- **FR-055**: System MUST notify users when provider fallback occurs, including which provider failed and which provider is now active
+- **FR-056**: System MUST attempt provider fallback for transient failures (rate limits, timeouts, temporary unavailability) but not for authentication errors
+- **FR-057**: System MUST use atomic write operations for all output files (write to temporary location, validate against schema, then atomic rename)
+- **FR-058**: System MUST automatically clean up temporary files when skill execution fails, ensuring no partial or corrupted files remain visible
+- **FR-059**: System MUST validate all skill outputs against their defined schemas before committing files to final locations
 
 ### Non-Functional Requirements
 
@@ -228,16 +245,18 @@ As a distributed team member, I need to send clarification questions via Jira ti
 #### Reliability
 
 - **NFR-011**: Skills MUST handle MCP connection failures with appropriate fallback behavior
-- **NFR-012**: Workflow MUST be resumable from any interruption point without data loss
+- **NFR-012**: Workflow MUST be resumable from any interruption point without data loss (atomic writes ensure no partial files exist)
 - **NFR-013**: Skills MUST validate their outputs against defined schemas before completion
-- **NFR-014**: System MUST maintain session state persistently across Claude Code restarts
+- **NFR-014**: System MUST maintain session state persistently across AI coding assistant restarts
 
 #### Cost & Efficiency
 
 - **NFR-015**: Total development cost MUST not exceed $60,000 for complete plugin
 - **NFR-016**: Plugin MUST operate with zero infrastructure costs (no servers, databases, or cloud services)
-- **NFR-017**: Per-workflow operational cost MUST not exceed $5 (Claude API costs)
+- **NFR-017**: Per-workflow operational cost MUST not exceed $5 (AI provider API costs, varies by provider)
 - **NFR-018**: Development timeline MUST not exceed 5 weeks for production-ready plugin
+- **NFR-019**: All AI providers (Claude, GPT-4, Gemini) MUST produce functionally equivalent outputs meeting the same quality thresholds (95% accuracy for PRD/Figma, 90% gap detection, valid schemas)
+- **NFR-020**: Cross-provider output variance is acceptable (exact wording may differ) as long as all providers meet specified accuracy and validation requirements
 
 ### Key Entities *(include if feature involves data)*
 
@@ -249,7 +268,7 @@ As a distributed team member, I need to send clarification questions via Jira ti
 
 - **Clarification Question**: Represents a question needing stakeholder input. Contains ID, priority, stakeholder type, question text, context, suggestions, and response.
 
-- **Session**: Represents a workflow execution instance. Contains session ID, current step, status, timestamps, and paths to all generated outputs.
+- **Session**: Represents a workflow execution instance. Contains session ID, current step (prd-analysis/figma-analysis/validation/clarification/tdd-generation), status (in-progress/paused/completed/failed), timestamps (created_at, updated_at), paths to all generated outputs, and checkpoint history. Each checkpoint records the completed skill, output file paths, and execution metadata.
 
 - **TDD (Technical Design Document)**: Represents the final comprehensive technical specification. Contains architecture decisions, API specs, database schemas, implementation tasks, and all supporting diagrams.
 
@@ -275,16 +294,17 @@ As a distributed team member, I need to send clarification questions via Jira ti
 - **SC-013**: Plugin receives 4 out of 5 or higher user satisfaction rating
 - **SC-014**: Zero critical bugs reported in production use after beta testing with 3+ users
 - **SC-015**: Documentation completeness enables new users to successfully run first analysis within 1 hour
+- **SC-016**: 100% of skill implementations follow TDD cycle (tests written and verified failing before implementation commits)
 
 ## Assumptions *(mandatory)*
 
-- Users have Claude Code installed and configured
+- Users have an AI coding assistant (Claude Code, Cursor, Aider, etc.) installed and configured
 - Users have appropriate API access (Confluence, Figma) with valid credentials
 - MCPs for Confluence and Figma are available and functional
 - PRD documents follow standard structure (overview, requirements, acceptance criteria sections)
 - Figma files use organized component structure (not completely ad-hoc designs)
 - Users can provide clarification responses either interactively or via configured tools
-- Claude API (Anthropic) remains available with current pricing and capabilities
+- At least one AI provider API (Anthropic Claude, OpenAI GPT-4, or Google Gemini) remains available
 - Typical workflow involves 10-30 requirements and 20-50 UI components
 - Stakeholders are available to respond to clarifications within reasonable timeframes
 - Development team has TypeScript and Node.js expertise
@@ -293,7 +313,7 @@ As a distributed team member, I need to send clarification questions via Jira ti
 
 - Full multi-agent system with distributed infrastructure (future enhancement only)
 - Scheduled or automated workflow execution (plugin is on-demand only)
-- Web dashboard for monitoring workflows (Claude Code UI is sufficient)
+- Web dashboard for monitoring workflows (AI assistant UI is sufficient)
 - Real-time collaboration features (single-user focused)
 - Support for design tools other than Figma (Sketch, Adobe XD, etc.)
 - Multi-language support (English only in v1.0)
@@ -308,7 +328,10 @@ As a distributed team member, I need to send clarification questions via Jira ti
 
 ### External Dependencies
 
-- **Anthropic Claude API**: Required for all AI-powered analysis and generation
+- **AI Provider APIs**: One or more required for AI-powered analysis and generation
+  - Anthropic Claude API (Sonnet 4.5, Opus, Haiku)
+  - OpenAI API (GPT-4, GPT-4 Turbo)
+  - Google AI API (Gemini Pro, Ultra)
 - **Atlassian MCP Server**: Required for Confluence PRD access and TDD publishing
 - **Figma MCP Server**: Required for Figma design file access (to be implemented)
 - **Jira MCP Server**: Optional for async clarification via tickets
@@ -316,7 +339,7 @@ As a distributed team member, I need to send clarification questions via Jira ti
 
 ### Internal Dependencies
 
-- **Claude Code Environment**: Plugin must run within Claude Code
+- **AI Coding Assistant Environment**: Plugin must run within AI coding assistant (Claude Code, Cursor, Aider, etc.)
 - **Node.js Runtime**: Required for skill implementation (TypeScript/JavaScript)
 - **File System Access**: For saving outputs and managing session state
 - **Existing Documentation**: app_adn.md v3.0.0 and constitution v3.0.0 define architecture
@@ -332,12 +355,12 @@ As a distributed team member, I need to send clarification questions via Jira ti
 
 ### Technical Constraints
 
-- Must operate entirely within Claude Code environment (no external services)
-- Must use only Claude API for AI capabilities (no alternative LLM providers)
+- Must operate entirely within AI coding assistant environment (no external services)
+- Must support multiple AI provider options through abstraction layer
 - Must use MCP protocol for all external service integrations
 - Output files must use local filesystem only (no cloud storage)
 - Session state must persist locally (no distributed state management)
-- Must be implementable in TypeScript/Node.js (Claude Code compatibility)
+- Must be implementable in TypeScript/Node.js (AI assistant compatibility)
 
 ### Business Constraints
 
@@ -350,13 +373,16 @@ As a distributed team member, I need to send clarification questions via Jira ti
 
 - Zero infrastructure costs permitted (no servers, databases, or cloud services)
 - Must work offline except for MCP calls to external services
-- Per-workflow cost must not exceed $5 (Claude API usage)
+- Per-workflow cost must not exceed $5 (varies by AI provider: Claude ~$4, GPT-4 ~$3.50, Gemini ~$2.50)
 - Must be usable by individual developers without IT support
 
 ### Quality Constraints
 
 - Test coverage must be 80% minimum for all skills
+- Test-first development (TDD) cycle must be enforced: write tests first (verify they fail), implement code (verify tests pass), refactor while maintaining green tests
+- CI pipeline must verify TDD compliance: tests must fail before implementation commits, then pass after implementation
 - All skills must pass integration tests with their respective MCPs
+- All skills must pass provider-agnostic tests: test suite must run successfully with Claude, GPT-4, AND Gemini to verify cross-provider consistency
 - Generated outputs must validate against defined schemas
 - Performance targets are mandatory (not aspirational)
 
@@ -366,4 +392,4 @@ As a distributed team member, I need to send clarification questions via Jira ti
 2. Should session state include version tracking for comparing TDD iterations?
 3. Should we support batch processing of multiple PRDs in a single workflow?
 4. What is the desired behavior when re-running analysis on updated PRDs - diff mode or full regeneration?
-5. Should we provide a "dry run" mode that simulates workflow without calling Claude API?
+5. Should we provide a "dry run" mode that simulates workflow without calling AI provider APIs?

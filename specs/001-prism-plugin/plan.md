@@ -1,20 +1,25 @@
 # Implementation Plan: MT-PRISM Claude Code Plugin
 
-**Branch**: `001-prism-plugin` | **Date**: 2025-11-06 | **Spec**: [spec.md](spec.md)
+**Branch**: `001-prism-plugin` | **Date**: 2025-11-20 | **Spec**: [spec.md](spec.md)
 **Input**: Feature specification from `/home/james/Documents/Projects/ai/mt-prism/specs/001-prism-plugin/spec.md`
 
 ## Summary
 
-MT-PRISM is a Claude Code plugin that automates the PRD-to-TDD discovery process through five specialized skills: PRD Analyzer (extracts structured requirements from Confluence/local PRDs in <2 min with 95%+ accuracy), Figma Analyzer (extracts UI components and design tokens in <3 min), Requirements Validator (cross-validates requirements vs designs, detects gaps in <3 min), Clarification Manager (manages interactive/async Q&A with stakeholders), and TDD Generator (creates comprehensive TDD with API specs, database schemas, and task breakdowns in <5 min). The full workflow completes in <20 minutes and requires zero infrastructure, leveraging MCPs for external integrations.
+MT-PRISM is a local-first AI plugin that automates the PRD-to-TDD discovery process through 5 specialized skills: PRD Analyzer, Figma Analyzer, Requirements Validator, Clarification Manager, and TDD Generator. The plugin runs within any AI coding assistant (Claude Code, Cursor, Aider, etc.), requires zero infrastructure, and uses an LLM abstraction layer to support multiple AI providers (Claude, GPT-4, Gemini). The system completes full workflows in under 20 minutes with 95%+ requirement extraction accuracy and 90%+ gap detection rate, delivering a complete TDD with API specs, database schemas, and task breakdowns. Key features: automatic provider fallback (Claude → GPT-4 → Gemini), atomic writes for data integrity, 5 checkpoint-based resume capability, and TDD-enforced development workflow.
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5.3+  
-**Primary Dependencies**: @anthropic-ai/sdk ^0.27.0, yaml ^2.3.4, zod ^3.22.4  
-**Storage**: Local filesystem (.prism/ directory for session state, outputs, and metrics)  
-**Testing**: Vitest 1.0+ with 80%+ coverage target  
-**Target Platform**: Claude Code environment (cross-platform: Linux, macOS, Windows)  
-**Project Type**: single (Claude Code plugin/CLI tool)  
+**Language/Version**: TypeScript 5.3+, Node.js 20 LTS
+**Primary Dependencies**:
+- AI Provider SDKs: @anthropic-ai/sdk ^0.27.0, openai ^4.0.0, @google/generative-ai ^0.1.0
+- Schema/Validation: zod ^3.22.0, yaml ^2.3.0
+- Testing: vitest ^1.0.0
+- MCPs: @modelcontextprotocol/server-atlassian, custom Figma MCP (TBD), Slack/Jira MCPs (optional)
+
+**Storage**: Local filesystem only (`.prism/` directory for session state and outputs, atomic writes with temp-validate-rename pattern)
+**Testing**: Vitest for unit/integration tests, 80%+ coverage requirement, provider-agnostic test suite (must pass with all 3 AI providers)
+**Target Platform**: Any AI coding assistant environment (Claude Code, Cursor, GitHub Copilot CLI, Aider, Windsurf, OpenAI Codex, VS Code Copilot)
+**Project Type**: Single project (plugin) - Node.js library with CLI entry points  
 **Performance Goals**: 
 - PRD analysis: <2 min for 5-10 page documents
 - Figma analysis: <3 min for 20-50 screens
@@ -22,13 +27,14 @@ MT-PRISM is a Claude Code plugin that automates the PRD-to-TDD discovery process
 - TDD generation: <5 min for complete 30-50 page document
 - Full workflow: <20 min end-to-end (excluding stakeholder wait time)
 
-**Constraints**: 
+**Constraints**:
 - Zero infrastructure (no servers, databases, or cloud services)
-- Local-only state management
-- MCP-based integrations only
-- Claude API cost: ~$3-5 per workflow
-- Single-user per session
-- Must work offline except for MCP/API calls
+- Offline-capable except for MCP and AI provider API calls
+- Per-workflow cost: < $5 (varies by provider: Claude ~$4, GPT-4 ~$3.50, Gemini ~$2.50)
+- Must work identically across all supported AI providers (functional equivalence required)
+- Session state must persist across AI assistant restarts
+- Atomic writes required for all outputs (temp → validate → atomic rename)
+- 5 checkpoint boundaries: after each skill completes (PRD, Figma, validation, clarification, TDD)
 
 **Scale/Scope**: 
 - Typical: 10-30 requirements, 20-50 UI components
@@ -75,9 +81,14 @@ MT-PRISM is a Claude Code plugin that automates the PRD-to-TDD discovery process
 - **Evidence**: All external services accessed via MCPs (Confluence MCP, Figma MCP, Jira MCP, Slack MCP). Skills never implement direct API clients
 - **Notes**: MCPs follow JSON-RPC protocol over standard transport
 
+### Principle VIII: LLM Provider Abstraction ✅
+- **Status**: COMPLIANT
+- **Evidence**: Multi-provider support via abstraction layer (spec updated 2025-11-19). Supports Claude, GPT-4, Gemini. Automatic fallback chain implemented (FR-054, FR-055, FR-056). Provider-agnostic skills (NFR-019, NFR-020). Configuration-based provider selection (.env file)
+- **Notes**: Skills use unified LLM interface, never call provider SDKs directly. Cross-provider testing required (all tests must pass with all 3 providers). Functionally equivalent outputs required across providers
+
 ### Constitution Version
-- **Applied**: v3.0.0 (Skill-First Architecture)
-- **Ratified**: 2025-11-05
+- **Applied**: v3.1.0 (Multi-Provider LLM Support)
+- **Ratified**: 2025-11-05, Last Amended: 2025-11-20
 
 ## Project Structure
 
@@ -103,73 +114,84 @@ specs/001-prism-plugin/
 
 ```text
 src/
-├── skills/              # Core plugin skills
+├── skills/              # 5 skill implementations
 │   ├── prd-analyzer.ts
 │   ├── figma-analyzer.ts
 │   ├── validator.ts
 │   ├── clarification-manager.ts
 │   └── tdd-generator.ts
-├── workflow/            # Orchestration logic
-│   ├── discovery-workflow.ts
-│   ├── session-manager.ts
-│   └── checkpoint.ts
-├── mcp/                 # MCP client implementations
-│   ├── confluence-client.ts
-│   ├── figma-client.ts
-│   ├── jira-client.ts
-│   └── slack-client.ts
-├── lib/                 # Shared utilities
-│   ├── claude-client.ts
-│   ├── prompt-loader.ts
-│   ├── yaml-parser.ts
-│   ├── schema-validator.ts
-│   └── file-utils.ts
+├── providers/           # LLM provider implementations
+│   ├── anthropic.ts
+│   ├── openai.ts
+│   ├── google.ts
+│   ├── factory.ts
+│   └── types.ts
 ├── types/               # TypeScript type definitions
-│   ├── requirements.ts
-│   ├── components.ts
-│   ├── gaps.ts
-│   ├── questions.ts
+│   ├── requirement.ts
+│   ├── component.ts
+│   ├── gap.ts
 │   ├── session.ts
 │   └── tdd.ts
-└── cli/                 # Command-line interface
-    └── index.ts
+├── utils/               # Shared utilities
+│   ├── llm.ts           # LLM abstraction layer
+│   ├── files.ts         # File operations (atomic writes)
+│   ├── prompts.ts       # Prompt templates
+│   ├── validation.ts    # Schema validation
+│   └── mcp.ts           # MCP client utilities
+├── workflows/           # Orchestration
+│   └── discover.ts      # Full PRD-to-TDD workflow
+└── cli.ts               # CLI entry point
 
 tests/
-├── contract/            # Schema validation tests
-│   ├── requirements.test.ts
-│   ├── components.test.ts
-│   └── gaps.test.ts
-├── integration/         # MCP and skill integration tests
+├── unit/                # Unit tests per skill
+│   ├── prd-analyzer.test.ts
+│   ├── figma-analyzer.test.ts
+│   ├── validator.test.ts
+│   ├── clarification-manager.test.ts
+│   └── tdd-generator.test.ts
+├── integration/         # Integration tests with MCPs
 │   ├── confluence-mcp.test.ts
 │   ├── figma-mcp.test.ts
-│   ├── prd-analyzer.test.ts
 │   └── workflow.test.ts
-└── unit/                # Unit tests for core logic
-    ├── prd-analyzer.test.ts
-    ├── figma-analyzer.test.ts
-    ├── validator.test.ts
-    ├── clarification-manager.test.ts
-    └── tdd-generator.test.ts
+└── providers/           # Provider-agnostic tests
+    ├── anthropic.test.ts
+    ├── openai.test.ts
+    └── google.test.ts
 
-fixtures/                # Test data
-├── sample-prd.md
-├── sample-figma.json
-└── sample-requirements.yaml
-
-prompts/                 # Already exists - Claude prompt templates
+prompts/                 # AI prompts for each skill
 ├── prd-analyzer.md
 ├── figma-analyzer.md
 ├── validator.md
 ├── clarification-manager.md
 └── tdd-generator.md
 
-templates/               # Already exists - Output schemas
-├── requirement.yaml
-├── component.yaml
-└── tdd-template.md
+templates/               # Output schemas and templates
+├── requirements-schema.yaml
+├── components-schema.yaml
+├── gaps-schema.yaml
+├── questions-schema.yaml
+├── tdd-template.md
+└── api-spec-template.yaml
+
+examples/                # Example inputs for testing
+├── sample-prd.md
+├── sample-figma-data.json
+└── sample-confluence-export.html
+
+.prism/                  # Runtime state (gitignored)
+├── sessions/
+│   └── sess-{timestamp}/
+│       ├── session_state.yaml
+│       ├── 01-prd-analysis/
+│       ├── 02-figma-analysis/
+│       ├── 03-validation/
+│       ├── 04-clarification/
+│       └── 05-tdd/
+├── metrics.jsonl
+└── .prism-config.yaml
 ```
 
-**Structure Decision**: Single project structure selected because MT-PRISM is a unified Claude Code plugin with all skills running in a single Node.js process. No frontend/backend separation needed. Skills are logical modules, not separate services. This simplifies development, testing, and deployment while maintaining clear boundaries through TypeScript modules.
+**Structure Decision**: Single project structure selected as this is a unified plugin with skill-based internal decomposition. No separate backend/frontend or multi-project monorepo needed. All skills share common utilities (LLM abstraction, file operations, validation) making a single codebase optimal. The `.prism/` directory provides local state management without requiring separate services.
 
 ## Complexity Tracking
 

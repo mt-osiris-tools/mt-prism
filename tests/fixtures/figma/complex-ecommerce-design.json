@@ -1,0 +1,490 @@
+{
+  "name": "E-Commerce Platform Design System",
+  "document": {
+    "id": "0:0",
+    "name": "E-Commerce Design",
+    "type": "DOCUMENT",
+    "children": [
+      {
+        "id": "1:0",
+        "name": "Components",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "2:1",
+            "name": "ProductCard",
+            "type": "COMPONENT_SET",
+            "description": "Product card with multiple variants for layout and state",
+            "children": [
+              {
+                "id": "2:2",
+                "name": "layout=grid, state=default",
+                "type": "COMPONENT",
+                "variantProperties": {
+                  "layout": "grid",
+                  "state": "default"
+                },
+                "children": [
+                  {
+                    "id": "2:3",
+                    "name": "Image",
+                    "type": "RECTANGLE",
+                    "fills": [
+                      {
+                        "type": "IMAGE",
+                        "imageRef": "placeholder-product.jpg"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "2:4",
+                    "name": "Title",
+                    "type": "TEXT",
+                    "characters": "Product Name",
+                    "style": {
+                      "fontFamily": "Inter",
+                      "fontWeight": 600,
+                      "fontSize": 16
+                    }
+                  },
+                  {
+                    "id": "2:5",
+                    "name": "Price",
+                    "type": "TEXT",
+                    "characters": "$99.99",
+                    "style": {
+                      "fontFamily": "Inter",
+                      "fontWeight": 700,
+                      "fontSize": 18
+                    }
+                  },
+                  {
+                    "id": "2:6",
+                    "name": "AddToCart",
+                    "type": "INSTANCE",
+                    "componentId": "6:1"
+                  }
+                ]
+              },
+              {
+                "id": "2:7",
+                "name": "layout=list, state=default",
+                "type": "COMPONENT",
+                "variantProperties": {
+                  "layout": "list",
+                  "state": "default"
+                },
+                "layoutMode": "HORIZONTAL",
+                "children": [
+                  {
+                    "id": "2:8",
+                    "name": "Image",
+                    "type": "RECTANGLE"
+                  },
+                  {
+                    "id": "2:9",
+                    "name": "Details",
+                    "type": "FRAME",
+                    "layoutMode": "VERTICAL",
+                    "children": [
+                      {
+                        "id": "2:10",
+                        "name": "Title",
+                        "type": "TEXT",
+                        "characters": "Product Name"
+                      },
+                      {
+                        "id": "2:11",
+                        "name": "Description",
+                        "type": "TEXT",
+                        "characters": "Product description with more details"
+                      },
+                      {
+                        "id": "2:12",
+                        "name": "Price",
+                        "type": "TEXT",
+                        "characters": "$99.99"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "2:13",
+                    "name": "AddToCart",
+                    "type": "INSTANCE",
+                    "componentId": "6:1"
+                  }
+                ]
+              },
+              {
+                "id": "2:14",
+                "name": "layout=grid, state=hover",
+                "type": "COMPONENT",
+                "variantProperties": {
+                  "layout": "grid",
+                  "state": "hover"
+                },
+                "effects": [
+                  {
+                    "type": "DROP_SHADOW",
+                    "color": {
+                      "r": 0,
+                      "g": 0,
+                      "b": 0,
+                      "a": 0.15
+                    },
+                    "offset": {
+                      "x": 0,
+                      "y": 4
+                    },
+                    "radius": 12,
+                    "spread": 0
+                  }
+                ],
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "3:1",
+            "name": "FilterSidebar",
+            "type": "COMPONENT",
+            "description": "Filter sidebar with category, price range, and rating filters",
+            "layoutMode": "VERTICAL",
+            "itemSpacing": 24,
+            "children": [
+              {
+                "id": "3:2",
+                "name": "CategoryFilter",
+                "type": "FRAME",
+                "children": [
+                  {
+                    "id": "3:3",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "Category"
+                  },
+                  {
+                    "id": "3:4",
+                    "name": "Options",
+                    "type": "FRAME",
+                    "children": [
+                      {
+                        "id": "3:5",
+                        "name": "Checkbox/Electronics",
+                        "type": "INSTANCE",
+                        "componentId": "7:1"
+                      },
+                      {
+                        "id": "3:6",
+                        "name": "Checkbox/Clothing",
+                        "type": "INSTANCE",
+                        "componentId": "7:1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "3:7",
+                "name": "PriceRangeFilter",
+                "type": "FRAME",
+                "children": [
+                  {
+                    "id": "3:8",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "Price Range"
+                  },
+                  {
+                    "id": "3:9",
+                    "name": "Slider",
+                    "type": "INSTANCE",
+                    "componentId": "8:1",
+                    "componentProperties": {
+                      "min": 0,
+                      "max": 1000,
+                      "value": "0-500"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "3:10",
+                "name": "RatingFilter",
+                "type": "FRAME",
+                "children": [
+                  {
+                    "id": "3:11",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "Minimum Rating"
+                  },
+                  {
+                    "id": "3:12",
+                    "name": "StarRating",
+                    "type": "INSTANCE",
+                    "componentId": "9:1",
+                    "componentProperties": {
+                      "rating": 4
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "4:1",
+            "name": "ProductGrid",
+            "type": "COMPONENT",
+            "description": "Responsive product grid - 4 columns desktop, 2 columns tablet, 1 column mobile",
+            "layoutMode": "VERTICAL",
+            "children": [
+              {
+                "id": "4:2",
+                "name": "Grid/Desktop",
+                "type": "FRAME",
+                "constraints": {
+                  "minWidth": 1024
+                },
+                "layoutMode": "HORIZONTAL",
+                "itemSpacing": 24,
+                "primaryAxisSizingMode": "AUTO",
+                "counterAxisAlignItems": "STRETCH",
+                "children": [
+                  {
+                    "id": "4:3",
+                    "name": "ProductCard",
+                    "type": "INSTANCE",
+                    "componentId": "2:2"
+                  },
+                  {
+                    "id": "4:4",
+                    "name": "ProductCard",
+                    "type": "INSTANCE",
+                    "componentId": "2:2"
+                  },
+                  {
+                    "id": "4:5",
+                    "name": "ProductCard",
+                    "type": "INSTANCE",
+                    "componentId": "2:2"
+                  },
+                  {
+                    "id": "4:6",
+                    "name": "ProductCard",
+                    "type": "INSTANCE",
+                    "componentId": "2:2"
+                  }
+                ]
+              },
+              {
+                "id": "4:7",
+                "name": "Grid/Tablet",
+                "type": "FRAME",
+                "constraints": {
+                  "minWidth": 768,
+                  "maxWidth": 1023
+                },
+                "layoutMode": "HORIZONTAL",
+                "itemSpacing": 16,
+                "children": [
+                  {
+                    "id": "4:8",
+                    "name": "ProductCard",
+                    "type": "INSTANCE",
+                    "componentId": "2:2"
+                  },
+                  {
+                    "id": "4:9",
+                    "name": "ProductCard",
+                    "type": "INSTANCE",
+                    "componentId": "2:2"
+                  }
+                ]
+              },
+              {
+                "id": "4:10",
+                "name": "Grid/Mobile",
+                "type": "FRAME",
+                "constraints": {
+                  "maxWidth": 767
+                },
+                "layoutMode": "VERTICAL",
+                "itemSpacing": 16,
+                "children": [
+                  {
+                    "id": "4:11",
+                    "name": "ProductCard",
+                    "type": "INSTANCE",
+                    "componentId": "2:2"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "5:1",
+            "name": "SearchBar",
+            "type": "COMPONENT",
+            "description": "Search bar with autocomplete and filters",
+            "layoutMode": "HORIZONTAL",
+            "itemSpacing": 8,
+            "children": [
+              {
+                "id": "5:2",
+                "name": "SearchIcon",
+                "type": "VECTOR"
+              },
+              {
+                "id": "5:3",
+                "name": "Input",
+                "type": "INSTANCE",
+                "componentId": "3:1"
+              },
+              {
+                "id": "5:4",
+                "name": "FilterButton",
+                "type": "INSTANCE",
+                "componentId": "6:1",
+                "componentProperties": {
+                  "icon": "filter",
+                  "variant": "secondary"
+                }
+              }
+            ]
+          },
+          {
+            "id": "6:1",
+            "name": "Button",
+            "type": "COMPONENT_SET",
+            "children": [
+              {
+                "id": "6:2",
+                "name": "variant=primary, size=medium",
+                "type": "COMPONENT",
+                "variantProperties": {
+                  "variant": "primary",
+                  "size": "medium"
+                }
+              },
+              {
+                "id": "6:3",
+                "name": "variant=secondary, size=medium",
+                "type": "COMPONENT",
+                "variantProperties": {
+                  "variant": "secondary",
+                  "size": "medium"
+                }
+              }
+            ]
+          },
+          {
+            "id": "7:1",
+            "name": "Checkbox",
+            "type": "COMPONENT_SET",
+            "children": [
+              {
+                "id": "7:2",
+                "name": "checked=false",
+                "type": "COMPONENT",
+                "variantProperties": {
+                  "checked": false
+                }
+              },
+              {
+                "id": "7:3",
+                "name": "checked=true",
+                "type": "COMPONENT",
+                "variantProperties": {
+                  "checked": true
+                }
+              }
+            ]
+          },
+          {
+            "id": "8:1",
+            "name": "RangeSlider",
+            "type": "COMPONENT",
+            "description": "Dual-handle range slider for price filtering"
+          },
+          {
+            "id": "9:1",
+            "name": "StarRating",
+            "type": "COMPONENT",
+            "description": "Star rating component (1-5 stars)"
+          }
+        ]
+      },
+      {
+        "id": "10:0",
+        "name": "Interactions",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "10:1",
+            "name": "ProductCard Hover Flow",
+            "type": "FRAME",
+            "reactions": [
+              {
+                "action": {
+                  "type": "NODE",
+                  "destinationId": "2:14",
+                  "transition": {
+                    "type": "SMART_ANIMATE",
+                    "duration": 0.3
+                  }
+                },
+                "trigger": {
+                  "type": "ON_HOVER"
+                }
+              }
+            ]
+          },
+          {
+            "id": "10:2",
+            "name": "Add to Cart Click",
+            "type": "FRAME",
+            "reactions": [
+              {
+                "action": {
+                  "type": "NODE",
+                  "destinationId": null,
+                  "navigation": "OVERLAY",
+                  "overlayRelativePosition": {
+                    "x": 0.5,
+                    "y": 0.5
+                  }
+                },
+                "trigger": {
+                  "type": "ON_CLICK"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "components": {
+    "2:1": {
+      "key": "product-card",
+      "name": "ProductCard",
+      "description": "Product card with multiple variants for layout and state"
+    },
+    "3:1": {
+      "key": "filter-sidebar",
+      "name": "FilterSidebar",
+      "description": "Filter sidebar with category, price range, and rating filters"
+    },
+    "4:1": {
+      "key": "product-grid",
+      "name": "ProductGrid",
+      "description": "Responsive product grid - 4 columns desktop, 2 columns tablet, 1 column mobile"
+    },
+    "5:1": {
+      "key": "search-bar",
+      "name": "SearchBar",
+      "description": "Search bar with autocomplete and filters"
+    }
+  }
+}

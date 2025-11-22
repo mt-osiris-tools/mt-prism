@@ -1,0 +1,92 @@
+metadata:
+  prd_source: "test-prd-with-issues.md"
+  analyzed_at: "2025-11-20T12:00:00Z"
+  total_requirements: 5
+  complexity_average: 4.8
+  confidence_average: 0.62
+
+requirements:
+  # Requirement with missing acceptance criteria
+  - id: REQ-FUNC-001
+    type: functional
+    priority: high
+    complexity: 5
+    title: "User Authentication"
+    description: "Users need to be able to log in to the system"
+    acceptance_criteria: []  # ISSUE: No criteria defined
+    dependencies: []
+    confidence: 0.50
+    status: draft
+    issues:
+      - type: incomplete
+        severity: high
+        description: "No acceptance criteria defined"
+
+  # Requirement with vague language
+  - id: REQ-PERF-001
+    type: performance
+    priority: high
+    complexity: 6
+    title: "System Performance"
+    description: "The system should be fast and responsive"
+    acceptance_criteria:
+      - "System loads quickly"
+      - "Users don't experience lag"
+    dependencies: []
+    confidence: 0.40
+    status: draft
+    issues:
+      - type: ambiguity
+        severity: high
+        description: "Vague performance term 'fast' - should specify exact latency"
+      - type: ambiguity
+        severity: high
+        description: "Vague term 'responsive' without metrics"
+
+  # Requirement with circular dependency
+  - id: REQ-FUNC-002
+    type: functional
+    priority: medium
+    complexity: 4
+    title: "User Profile Management"
+    description: "Users can update their profile information"
+    acceptance_criteria:
+      - "Profile edit form available"
+      - "Changes are saved"
+    dependencies:
+      - REQ-FUNC-003  # Circular: 003 depends on 002
+    confidence: 0.75
+    status: draft
+    issues: []
+
+  - id: REQ-FUNC-003
+    type: functional
+    priority: medium
+    complexity: 4
+    title: "Profile Display"
+    description: "Users can view their profile"
+    acceptance_criteria:
+      - "Profile page shows user data"
+    dependencies:
+      - REQ-FUNC-002  # Circular: 002 depends on 003
+    confidence: 0.75
+    status: draft
+    issues: []
+
+  # Well-formed requirement (no issues)
+  - id: REQ-SEC-001
+    type: security
+    priority: critical
+    complexity: 5
+    title: "Password Encryption"
+    description: "All user passwords must be encrypted using industry-standard hashing"
+    acceptance_criteria:
+      - "Passwords hashed with bcrypt (cost factor 12)"
+      - "Plaintext passwords never stored"
+      - "Hash verification on login"
+      - "Password change updates hash"
+    dependencies:
+      - REQ-FUNC-001
+    confidence: 0.95
+    status: draft
+    issues: []

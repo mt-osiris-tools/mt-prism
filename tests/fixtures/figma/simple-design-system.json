@@ -1,0 +1,372 @@
+{
+  "name": "Simple Task Manager Design System",
+  "document": {
+    "id": "0:0",
+    "name": "Task Manager Design",
+    "type": "DOCUMENT",
+    "children": [
+      {
+        "id": "1:0",
+        "name": "Components",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "2:1",
+            "name": "Button/Primary",
+            "type": "COMPONENT",
+            "componentPropertyDefinitions": {
+              "size": {
+                "type": "VARIANT",
+                "defaultValue": "medium",
+                "variantOptions": ["small", "medium", "large"]
+              },
+              "disabled": {
+                "type": "BOOLEAN",
+                "defaultValue": false
+              }
+            },
+            "backgroundColor": {
+              "r": 0.2,
+              "g": 0.4,
+              "b": 0.8,
+              "a": 1
+            },
+            "cornerRadius": 8,
+            "paddingLeft": 16,
+            "paddingRight": 16,
+            "paddingTop": 12,
+            "paddingBottom": 12,
+            "children": [
+              {
+                "id": "2:2",
+                "name": "Label",
+                "type": "TEXT",
+                "characters": "Click me",
+                "style": {
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "fontSize": 14,
+                  "textAlignHorizontal": "CENTER"
+                },
+                "fills": [
+                  {
+                    "type": "SOLID",
+                    "color": {
+                      "r": 1,
+                      "g": 1,
+                      "b": 1,
+                      "a": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "3:1",
+            "name": "Input/Text",
+            "type": "COMPONENT",
+            "componentPropertyDefinitions": {
+              "state": {
+                "type": "VARIANT",
+                "defaultValue": "default",
+                "variantOptions": ["default", "focus", "error", "disabled"]
+              },
+              "placeholder": {
+                "type": "TEXT",
+                "defaultValue": "Enter text..."
+              }
+            },
+            "backgroundColor": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            },
+            "strokeWeight": 1,
+            "strokes": [
+              {
+                "type": "SOLID",
+                "color": {
+                  "r": 0.8,
+                  "g": 0.8,
+                  "b": 0.8,
+                  "a": 1
+                }
+              }
+            ],
+            "cornerRadius": 4,
+            "paddingLeft": 12,
+            "paddingRight": 12,
+            "paddingTop": 8,
+            "paddingBottom": 8,
+            "children": [
+              {
+                "id": "3:2",
+                "name": "Placeholder",
+                "type": "TEXT",
+                "characters": "Enter text...",
+                "style": {
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fontSize": 14
+                },
+                "fills": [
+                  {
+                    "type": "SOLID",
+                    "color": {
+                      "r": 0.6,
+                      "g": 0.6,
+                      "b": 0.6,
+                      "a": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "4:1",
+            "name": "Card/Task",
+            "type": "COMPONENT",
+            "description": "Task card component with title, description, and actions",
+            "backgroundColor": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            },
+            "cornerRadius": 8,
+            "effects": [
+              {
+                "type": "DROP_SHADOW",
+                "color": {
+                  "r": 0,
+                  "g": 0,
+                  "b": 0,
+                  "a": 0.1
+                },
+                "offset": {
+                  "x": 0,
+                  "y": 2
+                },
+                "radius": 4,
+                "spread": 0
+              }
+            ],
+            "paddingLeft": 16,
+            "paddingRight": 16,
+            "paddingTop": 16,
+            "paddingBottom": 16,
+            "children": [
+              {
+                "id": "4:2",
+                "name": "Title",
+                "type": "TEXT",
+                "characters": "Task Title",
+                "style": {
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "fontSize": 16
+                }
+              },
+              {
+                "id": "4:3",
+                "name": "Description",
+                "type": "TEXT",
+                "characters": "Task description goes here",
+                "style": {
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fontSize": 14
+                }
+              },
+              {
+                "id": "4:4",
+                "name": "Actions",
+                "type": "FRAME",
+                "children": [
+                  {
+                    "id": "4:5",
+                    "name": "Complete Button",
+                    "type": "INSTANCE",
+                    "componentId": "2:1"
+                  },
+                  {
+                    "id": "4:6",
+                    "name": "Delete Button",
+                    "type": "INSTANCE",
+                    "componentId": "2:1"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "5:0",
+        "name": "Design Tokens",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "5:1",
+            "name": "Colors",
+            "type": "FRAME",
+            "children": [
+              {
+                "id": "5:2",
+                "name": "Primary/500",
+                "type": "RECTANGLE",
+                "fills": [
+                  {
+                    "type": "SOLID",
+                    "color": {
+                      "r": 0.2,
+                      "g": 0.4,
+                      "b": 0.8,
+                      "a": 1
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "5:3",
+                "name": "Gray/300",
+                "type": "RECTANGLE",
+                "fills": [
+                  {
+                    "type": "SOLID",
+                    "color": {
+                      "r": 0.8,
+                      "g": 0.8,
+                      "b": 0.8,
+                      "a": 1
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "5:4",
+                "name": "Success/500",
+                "type": "RECTANGLE",
+                "fills": [
+                  {
+                    "type": "SOLID",
+                    "color": {
+                      "r": 0.13,
+                      "g": 0.77,
+                      "b": 0.29,
+                      "a": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "5:5",
+            "name": "Typography",
+            "type": "FRAME",
+            "children": [
+              {
+                "id": "5:6",
+                "name": "Heading/H1",
+                "type": "TEXT",
+                "characters": "Heading 1",
+                "style": {
+                  "fontFamily": "Inter",
+                  "fontWeight": 700,
+                  "fontSize": 32,
+                  "lineHeightPx": 40
+                }
+              },
+              {
+                "id": "5:7",
+                "name": "Body/Regular",
+                "type": "TEXT",
+                "characters": "Body text",
+                "style": {
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fontSize": 14,
+                  "lineHeightPx": 20
+                }
+              }
+            ]
+          },
+          {
+            "id": "5:8",
+            "name": "Spacing",
+            "type": "FRAME",
+            "children": [
+              {
+                "id": "5:9",
+                "name": "space-xs",
+                "type": "RECTANGLE",
+                "width": 4,
+                "height": 4
+              },
+              {
+                "id": "5:10",
+                "name": "space-sm",
+                "type": "RECTANGLE",
+                "width": 8,
+                "height": 8
+              },
+              {
+                "id": "5:11",
+                "name": "space-md",
+                "type": "RECTANGLE",
+                "width": 16,
+                "height": 16
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "components": {
+    "2:1": {
+      "key": "btn-primary",
+      "name": "Button/Primary",
+      "description": "Primary action button with variants for size and state"
+    },
+    "3:1": {
+      "key": "input-text",
+      "name": "Input/Text",
+      "description": "Text input field with state variants"
+    },
+    "4:1": {
+      "key": "card-task",
+      "name": "Card/Task",
+      "description": "Task card component with title, description, and actions"
+    }
+  },
+  "styles": {
+    "S:primary-500": {
+      "name": "Color/Primary/500",
+      "styleType": "FILL",
+      "fills": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 0.2,
+            "g": 0.4,
+            "b": 0.8,
+            "a": 1
+          }
+        }
+      ]
+    },
+    "S:heading-h1": {
+      "name": "Typography/Heading/H1",
+      "styleType": "TEXT",
+      "fontFamily": "Inter",
+      "fontWeight": 700,
+      "fontSize": 32,
+      "lineHeightPx": 40
+    }
+  }
+}

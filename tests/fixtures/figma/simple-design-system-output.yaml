@@ -1,0 +1,139 @@
+metadata:
+  figma_file_id: "simple-task-manager"
+  figma_file_name: "Simple Task Manager Design System"
+  analyzed_at: "2025-11-21T16:00:00Z"
+  total_components: 3
+
+components:
+  - id: COMP-001
+    name: Button/Primary
+    type: Button
+    category: atom
+    variants:
+      - name: "size=small"
+        properties:
+          size: small
+          disabled: false
+      - name: "size=medium"
+        properties:
+          size: medium
+          disabled: false
+      - name: "size=large"
+        properties:
+          size: large
+          disabled: false
+      - name: "disabled=true"
+        properties:
+          size: medium
+          disabled: true
+    properties:
+      - name: size
+        type: VARIANT
+        default_value: medium
+        description: "Button size variant"
+      - name: disabled
+        type: BOOLEAN
+        default_value: false
+        description: "Disabled state"
+    design_tokens:
+      colors:
+        background: "rgba(51, 102, 204, 1.0)"
+        text: "rgba(255, 255, 255, 1.0)"
+      typography:
+        fontFamily: Inter
+        fontWeight: 600
+        fontSize: 14
+      spacing:
+        paddingX: 16
+        paddingY: 12
+      border_radius:
+        cornerRadius: 8
+    usage:
+      screens: ["Components"]
+      instances: 1
+
+  - id: COMP-002
+    name: Input/Text
+    type: Input
+    category: atom
+    variants:
+      - name: "state=default"
+        properties:
+          state: default
+      - name: "state=focus"
+        properties:
+          state: focus
+      - name: "state=error"
+        properties:
+          state: error
+      - name: "state=disabled"
+        properties:
+          state: disabled
+    properties:
+      - name: state
+        type: VARIANT
+        default_value: default
+        description: "Input state"
+      - name: placeholder
+        type: TEXT
+        default_value: "Enter text..."
+        description: "Placeholder text"
+    design_tokens:
+      colors:
+        background: "rgba(255, 255, 255, 1.0)"
+        border: "rgba(204, 204, 204, 1.0)"
+        placeholder: "rgba(153, 153, 153, 1.0)"
+      typography:
+        fontFamily: Inter
+        fontWeight: 400
+        fontSize: 14
+      spacing:
+        paddingX: 12
+        paddingY: 8
+      border_radius:
+        cornerRadius: 4
+    usage:
+      screens: ["Components"]
+      instances: 1
+
+  - id: COMP-003
+    name: Card/Task
+    type: Card
+    category: molecule
+    variants: []
+    properties: []
+    design_tokens:
+      colors:
+        background: "rgba(255, 255, 255, 1.0)"
+      spacing:
+        paddingX: 16
+        paddingY: 16
+      border_radius:
+        cornerRadius: 8
+      shadows:
+        card: "0px 2px 4px rgba(0, 0, 0, 0.1)"
+    usage:
+      screens: ["Components"]
+      instances: 1
+
+design_tokens:
+  colors:
+    primary-500: "rgba(51, 102, 204, 1.0)"
+    gray-300: "rgba(204, 204, 204, 1.0)"
+    success-500: "rgba(33, 196, 74, 1.0)"
+    white: "rgba(255, 255, 255, 1.0)"
+  typography:
+    heading-h1:
+      fontFamily: Inter
+      fontWeight: 700
+      fontSize: 32
+      lineHeight: 40
+    body-regular:
+      fontFamily: Inter
+      fontWeight: 400
+      fontSize: 14
+      lineHeight: 20
+  spacing:
+    xs: 4
+    sm: 8
+    md: 16

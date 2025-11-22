@@ -1,9 +1,11 @@
-# Tasks: MT-PRISM Claude Code Plugin
+# Tasks: MT-PRISM AI Agent Plugin
 
 **Input**: Design documents from `/home/james/Documents/Projects/ai/mt-prism/specs/001-prism-plugin/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/
 
 **Tests**: Test tasks included per constitution requirement (Test-First Development - NON-NEGOTIABLE). All tests must be written FIRST and verified to FAIL before implementation.
+
+**Multi-Provider**: All skills must work identically across Claude, GPT-4, and Gemini (functionally equivalent outputs required, NFR-019).
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -15,10 +17,13 @@
 
 ## Path Conventions
 
-Single project structure (Claude Code plugin):
-- `src/` - Source code at repository root
-- `tests/` - Test files at repository root
-- `prompts/` - Claude prompt templates
+Single project structure (AI agent plugin):
+- `src/skills/` - 5 skill implementations
+- `src/providers/` - LLM provider abstraction (anthropic, openai, google)
+- `src/utils/` - Shared utilities (LLM abstraction layer, file operations, validation)
+- `src/types/` - TypeScript type definitions
+- `tests/` - Test files (unit, integration, provider-agnostic)
+- `prompts/` - AI prompt templates
 - `templates/` - Output schemas and TDD template
 
 ---
@@ -29,7 +34,7 @@ Single project structure (Claude Code plugin):
 
 - [ ] T001 Create project structure with src/, tests/, prompts/, templates/ directories
 - [ ] T002 Initialize Node.js project with package.json and TypeScript configuration
-- [ ] T003 [P] Install dependencies: @anthropic-ai/sdk, yaml, zod, dotenv
+- [ ] T003 [P] Install dependencies: @anthropic-ai/sdk, openai, @google/generative-ai, yaml, zod, dotenv
 - [ ] T004 [P] Install dev dependencies: vitest, tsx, @types/node, typescript
 - [ ] T005 [P] Configure TypeScript with strict mode in tsconfig.json
 - [ ] T006 [P] Configure Vitest test framework in vitest.config.ts
@@ -45,9 +50,11 @@ Single project structure (Claude Code plugin):
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T010 Create Claude API client wrapper in src/utils/claude.ts with retry logic
+- [ ] T010 Create LLM provider abstraction layer in src/providers/ (anthropic.ts, openai.ts, google.ts, factory.ts, types.ts) with unified interface
+- [ ] T010a Implement automatic provider fallback chain (Claude → GPT-4 → Gemini) with user notification in src/providers/factory.ts
+- [ ] T010b Add provider selection configuration loading from .env (AI_PROVIDER, API keys) in src/providers/factory.ts
 - [ ] T011 [P] Create prompt loader utility in src/utils/prompts.ts for loading templates
-- [ ] T012 [P] Create file I/O utilities in src/utils/files.ts (readFile, writeFile, readYAML, writeYAML)
+- [ ] T012 [P] Create file I/O utilities in src/utils/files.ts with atomic write operations (writeAtomic: temp → validate → rename pattern)
 - [ ] T013 [P] Create MCP client base class in src/utils/mcp-client.ts
 - [ ] T014 Create type definitions for Requirement in src/types/requirement.ts
 - [ ] T015 [P] Create type definitions for Component in src/types/component.ts
@@ -57,7 +64,7 @@ Single project structure (Claude Code plugin):
 - [ ] T019 Create Zod schemas for all types in src/schemas/ directory
 - [ ] T020 [P] Copy prompt templates from /prompts/ to ensure they're accessible
 - [ ] T021 [P] Copy output schemas from /templates/ to ensure they're accessible
-- [ ] T022 Create session management utilities in src/utils/session.ts (init, save, load, resume)
+- [ ] T022 Create session management utilities in src/utils/session.ts with 5 checkpoint boundaries (after PRD, Figma, validation, clarification, TDD completion)
 - [ ] T023 [P] Create error handling utilities in src/utils/errors.ts with custom error classes
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
@@ -325,7 +332,7 @@ Single project structure (Claude Code plugin):
 - [ ] T150 [P] Add progress indicators and timing metrics to all skills
 - [ ] T151 [P] Create user feedback collection after workflow completion in src/utils/feedback.ts
 - [ ] T152 [P] Add metrics logging to .prism/metrics.jsonl in src/utils/metrics.ts
-- [ ] T153 Run full test suite and ensure 80%+ coverage across all skills
+- [ ] T153 Run full test suite with all 3 AI providers (Claude, GPT-4, Gemini) and ensure 80%+ coverage across all skills
 - [ ] T154 Create comprehensive README.md with installation, usage, and examples
 - [ ] T155 Create example PRD and Figma files in examples/ directory for testing
 - [ ] T156 Conduct beta testing with 3+ users and collect feedback
@@ -454,9 +461,9 @@ graph TD
 
 ## Summary
 
-**Total Tasks**: 161
+**Total Tasks**: 163
 - Setup: 9 tasks
-- Foundational: 14 tasks
+- Foundational: 16 tasks (includes LLM provider abstraction with fallback chain)
 - User Story 1 [P1]: 18 tasks (incl. 5 tests)
 - User Story 2 [P1]: 12 tasks (incl. 4 tests)
 - User Story 3 [P2]: 18 tasks (incl. 5 tests)
@@ -469,7 +476,9 @@ graph TD
 
 **Parallel Opportunities**: 47 tasks marked with [P] (29% parallelizable)
 
-**Test Coverage**: 35 test tasks ensuring TDD compliance (80%+ coverage target)
+**Test Coverage**: 35 test tasks ensuring TDD compliance (80%+ coverage target, must pass with all 3 AI providers)
+
+**Multi-Provider Support**: All skills tested with Claude, GPT-4, and Gemini for functional equivalence
 
 **Estimated Timeline**: 4-5 weeks with 1-2 developers
 
