@@ -71,13 +71,14 @@ export async function generateTDD(
     // 2. Prepare comprehensive input for TDD generation
     // Note: In production, this would use LLM provider with structured output
     // For now, using simplified generation
-    const inputData = {
-      project_name: projectName,
-      requirements: JSON.stringify(requirements, null, 2),
-      components: JSON.stringify(components, null, 2),
-      current_date: new Date().toISOString(),
-      session_id: sessionId,
-    };
+    // TODO: Re-enable when implementing LLM-based generation
+    // const inputData = {
+    //   project_name: projectName,
+    //   requirements: JSON.stringify(requirements, null, 2),
+    //   components: JSON.stringify(components, null, 2),
+    //   current_date: new Date().toISOString(),
+    //   session_id: sessionId,
+    // };
 
     // 3. Generate TDD using simplified logic
     console.log('🔨 Generating comprehensive TDD...');
@@ -127,7 +128,7 @@ export async function generateTDD(
  */
 async function generateSimplifiedTDD(
   requirements: RequirementsOutput,
-  components: ComponentsOutput,
+  _components: ComponentsOutput,
   projectName: string,
   sessionId: string
 ): Promise<TDD> {

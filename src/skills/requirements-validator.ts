@@ -169,7 +169,7 @@ export async function validateRequirements(
 /**
  * Helper: Detect if a requirement has corresponding UI in components
  */
-function detectUIMapping(requirementId: string, components: ComponentsOutput): boolean {
+function detectUIMapping(_requirementId: string, components: ComponentsOutput): boolean {
   // Simple heuristic: Check if any component mentions the requirement
   // In a real implementation, this would use more sophisticated matching
   return components.components.some(comp => {
@@ -181,7 +181,7 @@ function detectUIMapping(requirementId: string, components: ComponentsOutput): b
 /**
  * Helper: Detect if a component has corresponding requirement
  */
-function detectRequirementMapping(componentId: string, requirements: RequirementsOutput): boolean {
+function detectRequirementMapping(_componentId: string, requirements: RequirementsOutput): boolean {
   // Simple heuristic: Check if any functional requirement exists
   // In a real implementation, this would use semantic matching or explicit links
   return requirements.requirements.some(req => req.type === 'functional');

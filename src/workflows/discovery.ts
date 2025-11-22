@@ -16,9 +16,10 @@ import { WorkflowError } from '../utils/errors.js';
 // Import skills
 import { analyzePRD } from '../skills/prd-analyzer.js';
 import { analyzeFigmaDesign } from '../skills/figma-analyzer.js';
-import { validateRequirements } from '../skills/requirements-validator.js';
-import { generateClarifications } from '../skills/clarification-manager.js';
-import { generateTDD } from '../skills/tdd-generator.js';
+// TODO: Enable when implementing full workflow
+// import { validateRequirements } from '../skills/requirements-validator.js';
+// import { generateClarifications } from '../skills/clarification-manager.js';
+// import { generateTDD } from '../skills/tdd-generator.js';
 
 /**
  * Workflow execution options
@@ -93,7 +94,7 @@ export async function executeDiscoveryWorkflow(
           console.log('📄 Step 1/5: Analyzing PRD...');
           const stepStart = Date.now();
 
-          const result = await analyzePRD(options.prdSource, session.session_id, {
+          await analyzePRD(options.prdSource, session.session_id, {
             saveOutput: true,
           });
 
@@ -127,11 +128,9 @@ export async function executeDiscoveryWorkflow(
           console.log('🎨 Step 2/5: Analyzing Figma Design...');
           const stepStart = Date.now();
 
-          const result = await analyzeFigmaDesign(
-            options.figmaSource,
-            session.session_id,
-            { saveOutput: true }
-          );
+          await analyzeFigmaDesign(options.figmaSource, session.session_id, {
+            saveOutput: true,
+          });
 
           const checkpoint = await saveCheckpoint(
             session,
@@ -157,23 +156,13 @@ export async function executeDiscoveryWorkflow(
           console.log('🔍 Step 3/5: Validating Requirements...');
           const stepStart = Date.now();
 
-          // Load requirements and components from previous steps
-          const requirementsPath = join(
-            '.prism',
-            'sessions',
-            session.session_id,
-            '01-prd-analysis',
-            'requirements.yaml'
-          );
-          const componentsPath = join(
-            '.prism',
-            'sessions',
-            session.session_id,
-            '02-figma-analysis',
-            'components.yaml'
-          );
+          // TODO: Load requirements and components from previous steps
+          // const requirementsPath = join('.prism', 'sessions', session.session_id, '01-prd-analysis', 'requirements.yaml');
+          // const componentsPath = join('.prism', 'sessions', session.session_id, '02-figma-analysis', 'components.yaml');
+          // const requirements = await readYAMLWithSchema(requirementsPath, RequirementsOutputSchema);
+          // const components = await readYAMLWithSchema(componentsPath, ComponentsOutputSchema);
+          // const gaps = await validateRequirements(requirements, components, session.session_id);
 
-          // For now, use simplified validation without loading actual files
           console.log('   (Using simplified validation)');
 
           const checkpoint = await saveCheckpoint(
