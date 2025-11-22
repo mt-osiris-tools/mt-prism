@@ -201,8 +201,9 @@ configure_path() {
 verify_installation() {
   log_step "Verifying installation..."
 
-  if ! "${INSTALL_DIR}/node_modules/.bin/prism" --version > /dev/null 2>&1; then
+  if ! "${BIN_DIR}/prism" --help > /dev/null 2>&1; then
     log_error "Installation verification failed"
+    log_error "Unable to execute prism command"
     exit 5
   fi
 
@@ -313,9 +314,10 @@ main() {
   # Install dependencies
   install_dependencies
 
-  # Create bin directory and symlink
+  # Make CLI executable and create symlink
+  chmod +x "${INSTALL_DIR}/dist/cli.js"
   mkdir -p "$BIN_DIR"
-  ln -sf "${INSTALL_DIR}/node_modules/.bin/prism" "${BIN_DIR}/prism"
+  ln -sf "${INSTALL_DIR}/dist/cli.js" "${BIN_DIR}/prism"
 
   # Configure PATH
   configure_path
