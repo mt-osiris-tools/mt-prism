@@ -162,9 +162,30 @@ See: [Implementation Plan](docs/planning/IMPLEMENTATION_PLAN.md)
 
 ### Installation
 
+#### Option 1: One-Command Install (Recommended) ⭐
+
+```bash
+# Install with a single command
+curl -fsSL https://raw.githubusercontent.com/mt-osiris-tools/mt-prism/main/install.sh | sh
+
+# Or install specific version
+curl -fsSL https://raw.githubusercontent.com/mt-osiris-tools/mt-prism/main/install.sh | sh -s -- --version 1.0.0
+```
+
+The installer will:
+- ✅ Detect your platform (macOS, Linux, WSL)
+- ✅ Verify Node.js 20+ is installed
+- ✅ Download and install MT-PRISM
+- ✅ Configure your PATH automatically
+- ✅ Set up basic configuration
+
+After installation, follow the on-screen instructions to add your API key.
+
+#### Option 2: Manual Installation
+
 ```bash
 # Clone repository
-git clone https://github.com/your-org/mt-prism.git
+git clone https://github.com/mt-osiris-tools/mt-prism.git
 cd mt-prism
 
 # Install dependencies
