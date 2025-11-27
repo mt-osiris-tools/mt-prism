@@ -9,7 +9,6 @@ import { detectEnvironment, isClaudeCode } from '../../src/services/environment.
 
 describe('Environment Detection', () => {
   const originalEnv = process.env;
-  const originalPlatform = process.platform;
 
   beforeEach(() => {
     // Reset environment
@@ -40,7 +39,6 @@ describe('Environment Detection', () => {
       process.env['ANTHROPIC_API_KEY'] = 'sk-ant-test-123';
 
       // Mock execSync to return 'claude' as parent process
-      const { execSync } = await import('child_process');
       vi.spyOn(await import('child_process'), 'execSync').mockReturnValue('claude\n' as any);
 
       const env = await detectEnvironment();

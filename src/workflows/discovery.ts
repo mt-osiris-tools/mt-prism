@@ -249,9 +249,9 @@ export async function executeDiscoveryWorkflow(
             'tdd-generation',
             Date.now() - stepStart,
             [
-              '.prism/sessions/${activeSession.session_id}/05-tdd/tdd.md',
-              '.prism/sessions/${activeSession.session_id}/05-tdd/api-spec.json',
-              '.prism/sessions/${activeSession.session_id}/05-tdd/database-schema.sql',
+              `.prism/sessions/${activeSession.session_id}/05-tdd/tdd.md`,
+              `.prism/sessions/${activeSession.session_id}/05-tdd/api-spec.json`,
+              `.prism/sessions/${activeSession.session_id}/05-tdd/database-schema.sql`,
             ]
           );
 
