@@ -31,27 +31,27 @@ MT-PRISM is designed to run **entirely on the developer's machine** with **zero 
                  │
 ┌─────────────────────────────────────┐
 │       MT-PRISM Plugin               │
-│  ┌─────────────────────────────┐   │
-│  │  Skills (Modules)           │   │
-│  │  • prism.analyze-prd        │   │
-│  │  • prism.analyze-figma      │   │
-│  │  • prism.validate           │   │
-│  │  • prism.clarify            │   │
-│  │  • prism.generate-tdd       │   │
-│  │  • prism.discover (full)    │   │
-│  └─────────────────────────────┘   │
+│  ┌─────────────────────────────┐    │
+│  │  Skills (Modules)           │    │
+│  │  • prism.analyze-prd        │    │
+│  │  • prism.analyze-figma      │    │
+│  │  • prism.validate           │    │
+│  │  • prism.clarify            │    │
+│  │  • prism.generate-tdd       │    │
+│  │  • prism.discover (full)    │    │
+│  └─────────────────────────────┘    │
 │                                     │
-│  ┌─────────────────────────────┐   │
-│  │  LLM Abstraction Layer      │   │
-│  │  • Anthropic (Claude)       │   │
-│  │  • OpenAI (GPT-4)           │   │
-│  │  • Google (Gemini)          │   │
-│  └─────────────────────────────┘   │
+│  ┌─────────────────────────────┐    │
+│  │  LLM Abstraction Layer      │    │
+│  │  • Anthropic (Claude)       │    │
+│  │  • OpenAI (GPT-4)           │    │
+│  │  • Google (Gemini)          │    │
+│  └─────────────────────────────┘    │
 └─────────────────────────────────────┘
                  │
 ┌─────────────────────────────────────┐
-│    MCPs (Model Context Protocol)   │
-│  • Confluence (Atlassian)          │
+│    MCPs (Model Context Protocol)    │
+│  • Confluence (Atlassian)           │
 │  • Figma                            │
 │  • Jira (optional)                  │
 │  • Slack (optional)                 │

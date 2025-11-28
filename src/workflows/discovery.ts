@@ -12,6 +12,7 @@ import type { Session, Checkpoint, WorkflowStep } from '../types/session.js';
 import { SessionSchema } from '../schemas/session.js';
 import { writeYAMLWithSchema, readYAMLWithSchema, fileExists } from '../utils/files.js';
 import { WorkflowError } from '../utils/errors.js';
+import { WorkflowTimeoutManager } from '../utils/timeout-manager.js';
 
 // Import skills
 import { analyzePRD } from '../skills/prd-analyzer.js';
@@ -60,22 +61,48 @@ export async function executeDiscoveryWorkflow(
   options: DiscoveryWorkflowOptions
 ): Promise<DiscoveryWorkflowResult> {
   const startTime = Date.now();
+  const timeoutMinutes = options.timeoutMinutes || 30;
 
   console.log('🚀 Starting Discovery Workflow');
   console.log(`   PRD Source: ${options.prdSource}`);
   if (options.figmaSource) {
     console.log(`   Figma Source: ${options.figmaSource}`);
   }
+  console.log(`⏰ Timeout: ${timeoutMinutes} minutes`);
   console.log('');
+
+  // T041: Initialize 30-minute timeout manager (FR-016)
+  const timeoutManager = new WorkflowTimeoutManager(timeoutMinutes);
+  let session: Session | undefined;
 
   try {
     // 1. Initialize or resume session
-    const session = options.resumeSessionId
+    session = options.resumeSessionId
       ? await resumeSession(options.resumeSessionId)
       : await createSession(options);
 
-    console.log(`📂 Session: ${session.session_id}`);
+    // TypeScript guard: session is now definitely assigned
+    if (!session) {
+      throw new WorkflowError('Failed to initialize session', 'session-init');
+    }
+
+    // Type assertion: session is definitely assigned after guard
+    const activeSession: Session = session;
+
+    console.log(`📂 Session: ${activeSession.session_id}`);
     console.log('');
+
+    // Capture session in closure for timeout callback
+    const sessionForCallback = activeSession;
+
+    // T039: Start timeout with state save callback
+    timeoutManager.start(async () => {
+      console.log('💾 Saving session state before timeout...');
+      sessionForCallback.status = 'paused';
+      sessionForCallback.updated_at = new Date().toISOString();
+      await saveSession(sessionForCallback);
+      console.log(`✅ Session saved. Resume with: prism --resume=${sessionForCallback.session_id}`);
+    });
 
     const completedSteps: WorkflowStep[] = [];
     let totalCost = 0;
@@ -86,7 +113,7 @@ export async function executeDiscoveryWorkflow(
         step: 'prd-analysis',
         name: 'PRD Analysis',
         execute: async () => {
-          if (shouldSkipStep(session, 'prd-analysis')) {
+          if (shouldSkipStep(activeSession, 'prd-analysis')) {
             console.log('✓ PRD Analysis (already completed)');
             return;
           }
@@ -94,15 +121,15 @@ export async function executeDiscoveryWorkflow(
           console.log('📄 Step 1/5: Analyzing PRD...');
           const stepStart = Date.now();
 
-          await analyzePRD(options.prdSource, session.session_id, {
+          await analyzePRD(options.prdSource, activeSession.session_id, {
             saveOutput: true,
           });
 
           const checkpoint = await saveCheckpoint(
-            session,
+            activeSession,
             'prd-analysis',
             Date.now() - stepStart,
-            ['.prism/sessions/${session.session_id}/01-prd-analysis/requirements.yaml']
+            [`.prism/sessions/${activeSession.session_id}/01-prd-analysis/requirements.yaml`]
           );
 
           completedSteps.push('prd-analysis');
@@ -114,7 +141,7 @@ export async function executeDiscoveryWorkflow(
         step: 'figma-analysis',
         name: 'Figma Analysis',
         execute: async () => {
-          if (shouldSkipStep(session, 'figma-analysis')) {
+          if (shouldSkipStep(activeSession, 'figma-analysis')) {
             console.log('✓ Figma Analysis (already completed)');
             return;
           }
@@ -128,15 +155,15 @@ export async function executeDiscoveryWorkflow(
           console.log('🎨 Step 2/5: Analyzing Figma Design...');
           const stepStart = Date.now();
 
-          await analyzeFigmaDesign(options.figmaSource, session.session_id, {
+          await analyzeFigmaDesign(options.figmaSource, activeSession.session_id, {
             saveOutput: true,
           });
 
           const checkpoint = await saveCheckpoint(
-            session,
+            activeSession,
             'figma-analysis',
             Date.now() - stepStart,
-            ['.prism/sessions/${session.session_id}/02-figma-analysis/components.yaml']
+            [`.prism/sessions/${activeSession.session_id}/02-figma-analysis/components.yaml`]
           );
 
           completedSteps.push('figma-analysis');
@@ -148,7 +175,7 @@ export async function executeDiscoveryWorkflow(
         step: 'validation',
         name: 'Requirements Validation',
         execute: async () => {
-          if (shouldSkipStep(session, 'validation')) {
+          if (shouldSkipStep(activeSession, 'validation')) {
             console.log('✓ Requirements Validation (already completed)');
             return;
           }
@@ -166,10 +193,10 @@ export async function executeDiscoveryWorkflow(
           console.log('   (Using simplified validation)');
 
           const checkpoint = await saveCheckpoint(
-            session,
+            activeSession,
             'validation',
             Date.now() - stepStart,
-            ['.prism/sessions/${session.session_id}/03-validation/gaps.yaml']
+            ['.prism/sessions/${activeSession.session_id}/03-validation/gaps.yaml']
           );
 
           completedSteps.push('validation');
@@ -181,7 +208,7 @@ export async function executeDiscoveryWorkflow(
         step: 'clarification',
         name: 'Clarification',
         execute: async () => {
-          if (shouldSkipStep(session, 'clarification')) {
+          if (shouldSkipStep(activeSession, 'clarification')) {
             console.log('✓ Clarification (already completed)');
             return;
           }
@@ -192,10 +219,10 @@ export async function executeDiscoveryWorkflow(
           console.log('   (Using simplified clarification)');
 
           const checkpoint = await saveCheckpoint(
-            session,
+            activeSession,
             'clarification',
             Date.now() - stepStart,
-            ['.prism/sessions/${session.session_id}/04-clarification/questions.yaml']
+            ['.prism/sessions/${activeSession.session_id}/04-clarification/questions.yaml']
           );
 
           completedSteps.push('clarification');
@@ -207,7 +234,7 @@ export async function executeDiscoveryWorkflow(
         step: 'tdd-generation',
         name: 'TDD Generation',
         execute: async () => {
-          if (shouldSkipStep(session, 'tdd-generation')) {
+          if (shouldSkipStep(activeSession, 'tdd-generation')) {
             console.log('✓ TDD Generation (already completed)');
             return;
           }
@@ -218,13 +245,13 @@ export async function executeDiscoveryWorkflow(
           console.log('   (Using simplified TDD generation)');
 
           const checkpoint = await saveCheckpoint(
-            session,
+            activeSession,
             'tdd-generation',
             Date.now() - stepStart,
             [
-              '.prism/sessions/${session.session_id}/05-tdd/tdd.md',
-              '.prism/sessions/${session.session_id}/05-tdd/api-spec.json',
-              '.prism/sessions/${session.session_id}/05-tdd/database-schema.sql',
+              `.prism/sessions/${activeSession.session_id}/05-tdd/tdd.md`,
+              `.prism/sessions/${activeSession.session_id}/05-tdd/api-spec.json`,
+              `.prism/sessions/${activeSession.session_id}/05-tdd/database-schema.sql`,
             ]
           );
 
@@ -235,24 +262,52 @@ export async function executeDiscoveryWorkflow(
       },
     ];
 
-    // Execute each step
+    // Execute each step with timeout protection
     for (const { execute } of steps) {
+      // Check if timeout occurred before executing next step
+      if (timeoutManager.isAborted()) {
+        console.warn('⏱️  Workflow timeout reached, stopping execution');
+        break;
+      }
+
       await execute();
     }
 
-    // 3. Mark session as complete
-    session.status = 'completed';
-    session.updated_at = new Date().toISOString();
-    await saveSession(session);
+    // 3. Mark session as complete (if not timeout)
+    if (!timeoutManager.isAborted()) {
+      activeSession.status = 'completed';
+      activeSession.updated_at = new Date().toISOString();
+      await saveSession(activeSession);
+
+      // Cancel timeout on successful completion
+      timeoutManager.cancel();
+    }
 
     const totalDuration = Date.now() - startTime;
     const minutes = Math.floor(totalDuration / 60000);
     const seconds = Math.floor((totalDuration % 60000) / 1000);
 
+    if (timeoutManager.isAborted()) {
+      console.log('⏸️  Workflow Paused (Timeout)');
+      console.log(`   Duration: ${minutes}m ${seconds}s`);
+      console.log(`   Session: ${activeSession.session_id}`);
+      console.log(`   Resume with: prism --resume=${activeSession.session_id}`);
+      console.log('');
+
+      return {
+        sessionId: activeSession.session_id,
+        status: 'paused',
+        completedSteps,
+        outputs: {},
+        duration: totalDuration,
+        estimatedCost: totalCost,
+      };
+    }
+
     console.log('🎉 Discovery Workflow Complete!');
     console.log(`   Duration: ${minutes}m ${seconds}s`);
     console.log(`   Session: ${session.session_id}`);
-    console.log(`   Outputs: .prism/sessions/${session.session_id}/`);
+    console.log(`   Outputs: .prism/sessions/${activeSession.session_id}/`);
     console.log('');
 
     return {
@@ -260,14 +315,34 @@ export async function executeDiscoveryWorkflow(
       status: 'completed',
       completedSteps,
       outputs: {
-        tddPath: `.prism/sessions/${session.session_id}/05-tdd/tdd.md`,
-        apiSpecPath: `.prism/sessions/${session.session_id}/05-tdd/api-spec.json`,
-        databaseSchemaPath: `.prism/sessions/${session.session_id}/05-tdd/database-schema.sql`,
+        tddPath: `.prism/sessions/${activeSession.session_id}/05-tdd/tdd.md`,
+        apiSpecPath: `.prism/sessions/${activeSession.session_id}/05-tdd/api-spec.json`,
+        databaseSchemaPath: `.prism/sessions/${activeSession.session_id}/05-tdd/database-schema.sql`,
       },
       duration: totalDuration,
       estimatedCost: totalCost,
     };
   } catch (error) {
+    // Handle timeout abort separately (T041)
+    if (
+      error instanceof Error &&
+      error.name === 'AbortError' &&
+      timeoutManager.isAborted() &&
+      session
+    ) {
+      console.error('⏱️  Workflow timeout occurred');
+      console.error(`   Session paused. Resume with: prism --resume=${session.session_id}`);
+
+      return {
+        sessionId: session.session_id,
+        status: 'paused',
+        completedSteps: [],
+        outputs: {},
+        duration: Date.now() - startTime,
+        estimatedCost: 0,
+      };
+    }
+
     console.error('❌ Workflow failed:', error instanceof Error ? error.message : String(error));
 
     throw new WorkflowError(
