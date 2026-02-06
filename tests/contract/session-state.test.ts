@@ -130,16 +130,16 @@ describe('Session State Schema Validation', () => {
   it('should validate output paths are strings', () => {
     const state: SessionState = {
       session: {
-        session_id: 'sess-123',
+        session_id: 'sess-1234567890123',
         current_step: 'tdd-generation',
         status: 'completed',
         created_at: '2025-11-22T10:05:50.345Z',
         updated_at: '2025-11-22T10:25:50.345Z',
         prd_source: './test.md',
         outputs: {
-          tddPath: '.prism/sessions/sess-123/05-tdd/tdd.md',
-          apiSpecPath: '.prism/sessions/sess-123/05-tdd/api-spec.yaml',
-          databaseSchemaPath: '.prism/sessions/sess-123/05-tdd/database-schema.sql',
+          tdd_md: '.prism/sessions/sess-123/05-tdd/tdd.md',
+          api_spec_yaml: '.prism/sessions/sess-123/05-tdd/api-spec.yaml',
+          database_schema_sql: '.prism/sessions/sess-123/05-tdd/database-schema.sql',
         },
         checkpoints: [],
         config: {

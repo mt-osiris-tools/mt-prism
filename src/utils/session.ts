@@ -24,8 +24,19 @@ import { SessionError } from './errors.js';
  * Per NFR-012, NFR-014: Resumable from any interruption, persist across restarts
  */
 
-const PRISM_DIR = join(process.cwd(), '.prism');
-const SESSIONS_DIR = join(PRISM_DIR, 'sessions');
+/**
+ * Get .prism directory path (computed dynamically for test isolation)
+ */
+function getPrismDir(): string {
+  return join(process.cwd(), '.prism');
+}
+
+/**
+ * Get sessions directory path (computed dynamically for test isolation)
+ */
+function getSessionsDir(): string {
+  return join(getPrismDir(), 'sessions');
+}
 
 /**
  * Generate unique session ID
@@ -39,7 +50,7 @@ export function generateSessionId(): string {
  * Get session directory path
  */
 export function getSessionDir(sessionId: string): string {
-  return join(SESSIONS_DIR, sessionId);
+  return join(getSessionsDir(), sessionId);
 }
 
 /**
@@ -259,7 +270,7 @@ export async function listSessions(): Promise<string[]> {
   const fs = await import('fs/promises');
 
   try {
-    const entries = await fs.readdir(SESSIONS_DIR, { withFileTypes: true });
+    const entries = await fs.readdir(getSessionsDir(), { withFileTypes: true });
     return entries
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
