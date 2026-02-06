@@ -52,6 +52,81 @@ async function handleListSessions(): Promise<void> {
 }
 
 /**
+ * Handle config commands
+ */
+async function handleConfigCommand(args: string[]): Promise<void> {
+  const { ConfigManager } = await import('./utils/config-manager.js');
+  const configManager = new ConfigManager();
+
+  // Check for --show flag
+  if (args.includes('--show')) {
+    console.log('');
+    console.log('📋 Current Configuration');
+    console.log('');
+    const configYaml = await configManager.show();
+    console.log(configYaml);
+    return;
+  }
+
+  // Check for --reset flag
+  if (args.includes('--reset')) {
+    await configManager.reset();
+    console.log('');
+    console.log('✅ Configuration reset to defaults');
+    console.log('');
+    console.log('Run `prism config --show` to see current settings');
+    console.log('');
+    return;
+  }
+
+  // Check for --provider flag
+  const providerArg = args.find(arg => arg.startsWith('--provider='));
+  if (providerArg) {
+    const provider = providerArg.split('=')[1];
+    if (!provider) {
+      console.error('');
+      console.error('❌ Error: --provider requires a value');
+      console.error('');
+      console.error('Usage: prism config --provider=<anthropic|openai|google>');
+      console.error('');
+      process.exit(1);
+    }
+
+    const validProviders = ['anthropic', 'openai', 'google'];
+
+    if (!validProviders.includes(provider)) {
+      console.error('');
+      console.error('❌ Error: Invalid AI provider');
+      console.error('');
+      console.error(`Provider must be one of: ${validProviders.join(', ')}`);
+      console.error(`Provided: ${provider}`);
+      console.error('');
+      process.exit(1);
+    }
+
+    await configManager.set('llm.provider', provider);
+    console.log('');
+    console.log(`✅ AI provider set to: ${provider}`);
+    console.log('');
+    console.log('Subsequent analyses will use this provider');
+    console.log('Run `prism config --show` to verify settings');
+    console.log('');
+    return;
+  }
+
+  // No valid config command found
+  console.error('');
+  console.error('❌ Error: Invalid config command');
+  console.error('');
+  console.error('Valid commands:');
+  console.error('  prism config --show                 # Show current configuration');
+  console.error('  prism config --provider=<name>      # Set AI provider (anthropic|openai|google)');
+  console.error('  prism config --reset                # Reset to default configuration');
+  console.error('');
+  process.exit(1);
+}
+
+/**
  * T042: Graceful shutdown handler for saving session state on interrupt
  */
 let currentSession: any = null;
@@ -174,6 +249,12 @@ async function main() {
     process.exit(0);
   }
 
+  // Handle config commands (US4 - P3)
+  if (args[0] === 'config') {
+    await handleConfigCommand(args.slice(1)); // Pass args after 'config'
+    process.exit(0);
+  }
+
   // T037: Handle --list-sessions command (FR-005)
   if (args.includes('--list-sessions')) {
     await handleListSessions();
@@ -255,9 +336,13 @@ async function main() {
 }
 
 function printHelp() {
-  console.log('Usage: prism [options]');
+  console.log('Usage: prism [command] [options]');
   console.log('');
-  console.log('Options:');
+  console.log('Commands:');
+  console.log('  prism [options]                    Run PRD-to-TDD workflow');
+  console.log('  prism config [--show|--reset]      Manage configuration');
+  console.log('');
+  console.log('Workflow Options:');
   console.log('  --prd=<path|url>      PRD source (local file or Confluence URL)');
   console.log('  --figma=<id|path>     Figma file ID or local JSON (optional)');
   console.log('  --project=<name>      Project name for TDD (optional)');
@@ -265,14 +350,22 @@ function printHelp() {
   console.log('  --list-sessions       List all available sessions');
   console.log('  --help, -h            Show this help message');
   console.log('');
+  console.log('Config Options:');
+  console.log('  --show                Show current configuration');
+  console.log('  --provider=<name>     Set AI provider (anthropic|openai|google)');
+  console.log('  --reset               Reset configuration to defaults');
+  console.log('');
   console.log('Examples:');
   console.log('  prism --prd=./docs/requirements.md --project="My App"');
   console.log('  prism --prd=https://confluence.com/123 --figma=abc123xyz');
   console.log('  prism --list-sessions');
   console.log('  prism --resume=sess-1234567890');
+  console.log('  prism config --show');
+  console.log('  prism config --provider=openai');
+  console.log('  prism config --reset');
   console.log('');
   console.log('Environment Variables:');
-  console.log('  AI_PROVIDER          AI provider (claude|openai|google)');
+  console.log('  AI_PROVIDER          AI provider (anthropic|openai|google)');
   console.log('  ANTHROPIC_API_KEY    Claude API key');
   console.log('  OPENAI_API_KEY       OpenAI API key');
   console.log('  GOOGLE_API_KEY       Google AI API key');
