@@ -1,6 +1,6 @@
 {
   "name": "mt-prism",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MT-PRISM: Multi-provider AI automation for PRD-to-TDD workflows (Claude, GPT-4, Gemini)",
   "type": "module",
   "main": "dist/index.js",
