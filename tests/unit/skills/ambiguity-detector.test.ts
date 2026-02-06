@@ -15,7 +15,7 @@ describe('Ambiguity Detection', () => {
 
       testCases.forEach((text) => {
         const issues = detectAmbiguities(text, []);
-        const vagueIssues = issues.filter((i) => i.type === 'ambiguous');
+        const vagueIssues = issues.filter((i) => i.type === 'ambiguity');
         expect(vagueIssues.length).toBeGreaterThan(0);
         expect(vagueIssues.some((i) => i.severity === 'high' || i.severity === 'medium')).toBe(true);
       });
@@ -32,7 +32,7 @@ describe('Ambiguity Detection', () => {
 
       testCases.forEach((text) => {
         const issues = detectAmbiguities(text, []);
-        expect(issues.some((i) => i.type === 'ambiguous')).toBe(true);
+        expect(issues.some((i) => i.type === 'ambiguity')).toBe(true);
       });
     });
 
@@ -47,7 +47,7 @@ describe('Ambiguity Detection', () => {
 
       testCases.forEach((text) => {
         const issues = detectAmbiguities(text, []);
-        expect(issues.some((i) => i.type === 'ambiguous')).toBe(true);
+        expect(issues.some((i) => i.type === 'ambiguity')).toBe(true);
       });
     });
 
@@ -62,7 +62,7 @@ describe('Ambiguity Detection', () => {
 
       testCases.forEach((text) => {
         const issues = detectAmbiguities(text, []);
-        const vagueIssues = issues.filter((i) => i.type === 'ambiguous' && i.severity === 'high');
+        const vagueIssues = issues.filter((i) => i.type === 'ambiguity' && i.severity === 'high');
         expect(vagueIssues.length).toBe(0);
       });
     });
@@ -95,7 +95,7 @@ describe('Ambiguity Detection', () => {
 
       testCases.forEach((text) => {
         const issues = detectAmbiguities(text, []);
-        expect(issues.some((i) => i.type === 'incomplete' || i.type === 'ambiguous')).toBe(true);
+        expect(issues.some((i) => i.type === 'incomplete' || i.type === 'ambiguity')).toBe(true);
       });
     });
 
@@ -110,7 +110,7 @@ describe('Ambiguity Detection', () => {
 
       testCases.forEach((text) => {
         const issues = detectAmbiguities(text, []);
-        expect(issues.some((i) => i.type === 'ambiguous')).toBe(true);
+        expect(issues.some((i) => i.type === 'ambiguity')).toBe(true);
       });
     });
 
@@ -173,7 +173,7 @@ describe('Ambiguity Detection', () => {
       const text = 'The system must support guest checkout. User accounts are required for all purchases.';
       const issues = detectAmbiguities(text, []);
 
-      const contradictions = issues.filter((i) => i.type === 'ambiguous' && i.description.includes('contradict'));
+      const contradictions = issues.filter((i) => i.type === 'ambiguity' && i.description.includes('contradict'));
       expect(contradictions.length).toBeGreaterThan(0);
     });
 
@@ -181,14 +181,14 @@ describe('Ambiguity Detection', () => {
       const text = 'All data must be encrypted. Encryption is optional for performance reasons.';
       const issues = detectAmbiguities(text, []);
 
-      expect(issues.some((i) => i.type === 'ambiguous' && i.severity === 'high')).toBe(true);
+      expect(issues.some((i) => i.type === 'ambiguity' && i.severity === 'high')).toBe(true);
     });
 
     it.skip('should detect inconsistent priorities', () => { // TODO: Implement priority inconsistency detection
       const text = 'This is a critical feature but can be deferred to phase 2 if needed.';
       const issues = detectAmbiguities(text, []);
 
-      expect(issues.some((i) => i.type === 'ambiguous')).toBe(true);
+      expect(issues.some((i) => i.type === 'ambiguity')).toBe(true);
     });
   });
 
@@ -235,7 +235,7 @@ describe('Ambiguity Detection', () => {
 
       testCases.forEach((text) => {
         const issues = detectAmbiguities(text, []);
-        expect(issues.some((i) => i.type === 'ambiguous' && i.severity === 'high')).toBe(true);
+        expect(issues.some((i) => i.type === 'ambiguity' && i.severity === 'high')).toBe(true);
       });
     });
 
@@ -421,7 +421,7 @@ describe('Ambiguity Detection', () => {
       const issues = detectAmbiguities(text, []);
 
       expect(issues.length).toBeGreaterThan(1);
-      expect(issues.some((i) => i.type === 'ambiguous')).toBe(true);
+      expect(issues.some((i) => i.type === 'ambiguity')).toBe(true);
       expect(issues.some((i) => i.type === 'incomplete')).toBe(true);
     });
 

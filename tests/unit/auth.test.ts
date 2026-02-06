@@ -15,6 +15,11 @@ describe('Authentication Discovery', () => {
 
   beforeEach(() => {
     process.env = { ...originalEnv };
+    // Clear all API keys to ensure test isolation
+    delete process.env['ANTHROPIC_API_KEY'];
+    delete process.env['OPENAI_API_KEY'];
+    delete process.env['GOOGLE_API_KEY'];
+    delete process.env['GEMINI_API_KEY'];
     vi.clearAllMocks();
   });
 
