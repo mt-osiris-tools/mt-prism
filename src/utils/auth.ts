@@ -23,7 +23,13 @@ import type { AuthCredentials } from '../types/auth.js';
  */
 export async function discoverCredentials(): Promise<AuthCredentials> {
   // Priority 1: Environment variable (auto-inherited from Claude Code)
-  if (process.env['ANTHROPIC_API_KEY']) {
+  const hasEnvCredentials =
+    process.env['ANTHROPIC_API_KEY'] ||
+    process.env['OPENAI_API_KEY'] ||
+    process.env['GOOGLE_API_KEY'] ||
+    process.env['GEMINI_API_KEY'];
+
+  if (hasEnvCredentials) {
     return {
       source: 'env-var',
       anthropicApiKey: process.env['ANTHROPIC_API_KEY'],
